@@ -3,7 +3,7 @@
 """
 GaraServer
 Copyright 2016 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
-License: MIT (see license.txt)
+License: MIT (see LICENSE)
 """
 
 import sys
@@ -13,6 +13,7 @@ import http.server
 import threading
 import socketserver
 import ui
+from gara import *
 
 
 class WebService (http.server.BaseHTTPRequestHandler):
@@ -54,8 +55,12 @@ class DlgNewGara (QDialog):
         self.ui.prove.setCurrentIndex(2)
 
     def accept(self):
-        description = self.ui.description.text()
-        n = self.ui.numeroGiudici.currentText()
+        gara = Gara(description=self.ui.description.text(),
+                    nJudges=self.ui.numeroGiudici.currentText(),
+                    date=self.ui.dateEdit.date(),
+                    trials=self.ui.prove.currentText(),
+                    nUsers=self.ui.atleti.text())
+        self.parent().setGara(gara)
         super().accept()
 
     def reject(self):
@@ -68,12 +73,15 @@ class GaraMainWindow (QMainWindow):
         dlg = DlgNewGara(self)
         dlg.show()
 
+    def setGara(self, gara):
+        print(gara)
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.actionNuova_gara.triggered.connect(self.showNuovaGara)
-
+        self.showNuovaGara()
 
 if __name__ == '__main__':
     # webservice
