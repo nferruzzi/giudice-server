@@ -5,11 +5,12 @@ GaraServer
 Copyright 2016 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
 License: MIT (see LICENSE)
 """
-from PyQt5.QtCore import QUuid, QStandardPaths
+from PyQt5.QtCore import QUuid, QStandardPaths, QDate
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
+import datetime
 
 Base = declarative_base()
 
@@ -40,16 +41,35 @@ class Gara(object):
                  description="Non configurata",
                  nJudges=0,
                  date=None,
-                 trials=0,
-                 nUsers=0):
+                 nTrials=0,
+                 nUsers=0,
+                 current=False):
         self.description = description
         self.nJudges = nJudges
-        self.date = date
-        self.trials = trials
-        self.users = nUsers
+        self.date = date if date is not None else QDate.currentDate()
+        self.nTrials = nTrials
+        self.nUsers = nUsers
         self.local_uuid = QUuid.createUuid().toString() + '.db'
+        self.current = current
 
     def createDB(self):
         dd = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
-        self.engine = create_engine('sqlite:///' + 'temp/' + self.local_uuid)
+        if not self.current:
+            self.engine = create_engine('sqlite:///:memory:')
+        else:
+            self.engine = create_engine('sqlite:///' + 'temp/' + self.local_uuid)
+
         Base.metadata.create_all(self.engine)
+        Base.metadata.bind = self.engine
+        DBSession = sessionmaker(bind=self.engine)
+        self.session = DBSession()
+        conf = Config()
+        conf.description = self.description
+        conf.date = datetime.datetime(year=self.date.year(),
+                                      month=self.date.month(),
+                                      day=self.date.day())
+        conf.nJudges = self.nJudges
+        conf.nTrials = self.nTrials
+        conf.nUsers = self.nUsers
+        self.session.add(conf)
+        self.session.commit()

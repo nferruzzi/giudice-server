@@ -56,10 +56,11 @@ class DlgNewGara (QDialog):
 
     def accept(self):
         gara = Gara(description=self.ui.description.text(),
-                    nJudges=self.ui.numeroGiudici.currentText(),
+                    nJudges=int(self.ui.numeroGiudici.currentText()),
                     date=self.ui.dateEdit.date(),
-                    trials=self.ui.prove.currentText(),
-                    nUsers=self.ui.atleti.text())
+                    nTrials=int(self.ui.prove.currentText()),
+                    nUsers=int(self.ui.atleti.text()),
+                    current=True)
         self.parent().setGara(gara)
         super().accept()
 
