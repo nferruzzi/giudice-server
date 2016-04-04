@@ -55,7 +55,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0"))
         self.menuGare.setTitle(_translate("MainWindow", "Files"))
         self.menuImpostazioni.setTitle(_translate("MainWindow", "Impostazioni"))
         self.actionNuova_gara.setText(_translate("MainWindow", "Nuova gara..."))
