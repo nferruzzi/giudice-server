@@ -75,12 +75,14 @@ class GaraMainWindow (QMainWindow):
 
     def setGara(self, gara):
         print(gara)
+        gara.createDB()
 
     def __init__(self):
         QMainWindow.__init__(self)
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.actionNuova_gara.triggered.connect(self.showNuovaGara)
+        self.setGara(Gara())
         self.showNuovaGara()
 
 if __name__ == '__main__':
