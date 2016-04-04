@@ -1,2 +1,3 @@
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    newgara.ui
