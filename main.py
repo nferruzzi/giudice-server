@@ -75,9 +75,22 @@ class GaraMainWindow (QMainWindow):
         dlg.show()
 
     def setGara(self, gara):
-        print(gara)
-        gara.createDB()
-        self.ui.currentTrial.setText(str(gara.configuration.currentTrial+1))
+        self.currentGara = gara
+        self.currentGara.createDB()
+        self.updateUI()
+
+    def updateUI(self):
+        self.ui.description.setText(self.currentGara.configuration.description)
+
+        ntrials = "{}/{}".format(self.currentGara.configuration.currentTrial+1,
+                                 self.currentGara.configuration.nTrials)
+        self.ui.currentTrial.setText(ntrials)
+
+        nusers = "{}/{}".format(0, self.currentGara.configuration.nUsers)
+        self.ui.usersCounter.setText(nusers)
+
+        ngiudici = "{}/{}".format(0, self.currentGara.configuration.nJudges)
+        self.ui.judgesCounter.setText(ngiudici)
 
     def __init__(self):
         QMainWindow.__init__(self)
