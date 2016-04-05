@@ -14,6 +14,9 @@ import threading
 import socketserver
 import ui
 from gara import *
+import json
+
+global MainWindow
 
 
 class WebService (http.server.BaseHTTPRequestHandler):
@@ -22,14 +25,19 @@ class WebService (http.server.BaseHTTPRequestHandler):
         self.send_response(200)
 
         # Send headers
-        self.send_header('Content-type', 'text/html')
+        self.send_header('Content-type', 'application/json')
         self.end_headers()
 
         # Send message back to client
-        message = "Presente"
+        response = {
+            "current_trial": 0,
+            "max_trial": MainWindow.currentGara.configuration.nTrials,
+            "current_user": 0,
+            "max_user": MainWindow.currentGara.configuration.nUsers,
+        }
 
         # Write content as utf-8 data
-        self.wfile.write(bytes(message, "utf8"))
+        self.wfile.write(bytes(json.dumps(response), "utf8"))
 
     def do_POST(self):
         self.send_response(200)
@@ -108,8 +116,8 @@ if __name__ == '__main__':
 
     # main ui
     app = QApplication(sys.argv)
-    w = GaraMainWindow()
-    w.show()
+    MainWindow = GaraMainWindow()
+    MainWindow.show()
     v = app.exec_()
 
     # shutdown
