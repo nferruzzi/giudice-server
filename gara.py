@@ -18,6 +18,8 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
+    user = Column(Integer)
+    trial = Column(Integer)
     vote1 = Column(Float, nullable=True)
     vote2 = Column(Float, nullable=True)
     vote3 = Column(Float, nullable=True)
@@ -34,6 +36,7 @@ class Config(Base):
     nJudges = Column(Integer)
     nUsers = Column(Integer)
     nTrials = Column(Integer)
+    currentTrial = Column(Integer)
 
 
 class Gara(object):
@@ -44,11 +47,11 @@ class Gara(object):
                  nTrials=0,
                  nUsers=0,
                  current=False):
-        self.description = description
-        self.nJudges = nJudges
-        self.date = date if date is not None else QDate.currentDate()
-        self.nTrials = nTrials
-        self.nUsers = nUsers
+        self._description = description
+        self._nJudges = nJudges
+        self._date = date if date is not None else QDate.currentDate()
+        self._nTrials = nTrials
+        self._nUsers = nUsers
         self.local_uuid = QUuid.createUuid().toString() + '.db'
         self.current = current
 
@@ -64,12 +67,14 @@ class Gara(object):
         DBSession = sessionmaker(bind=self.engine)
         self.session = DBSession()
         conf = Config()
-        conf.description = self.description
-        conf.date = datetime.datetime(year=self.date.year(),
-                                      month=self.date.month(),
-                                      day=self.date.day())
-        conf.nJudges = self.nJudges
-        conf.nTrials = self.nTrials
-        conf.nUsers = self.nUsers
+        conf.description = self._description
+        conf.date = datetime.datetime(year=self._date.year(),
+                                      month=self._date.month(),
+                                      day=self._date.day())
+        conf.nJudges = self._nJudges
+        conf.nTrials = self._nTrials
+        conf.nUsers = self._nUsers
+        conf.currentTrial = 0
         self.session.add(conf)
         self.session.commit()
+        self.configuration = conf

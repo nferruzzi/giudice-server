@@ -77,6 +77,7 @@ class GaraMainWindow (QMainWindow):
     def setGara(self, gara):
         print(gara)
         gara.createDB()
+        self.ui.currentTrial.setText(str(gara.configuration.currentTrial+1))
 
     def __init__(self):
         QMainWindow.__init__(self)
