@@ -20,9 +20,13 @@ global MainWindow
 
 
 class WebService (http.server.BaseHTTPRequestHandler):
+    VERSION = '1.0'
+
     def do_GET(self):
         # Send response status code
         self.send_response(200)
+
+        print(self.headers)
 
         # Send headers
         self.send_header('Content-type', 'application/json')
@@ -30,10 +34,13 @@ class WebService (http.server.BaseHTTPRequestHandler):
 
         # Send message back to client
         response = {
+            "version": WebService.VERSION,
             "current_trial": 0,
             "max_trial": MainWindow.currentGara.configuration.nTrials,
             "current_user": 0,
             "max_user": MainWindow.currentGara.configuration.nUsers,
+            "uuid": MainWindow.currentGara.local_uuid,
+            "description": MainWindow.currentGara.configuration.description,
         }
 
         # Write content as utf-8 data
