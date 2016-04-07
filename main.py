@@ -33,15 +33,8 @@ class WebService (http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
         # Send message back to client
-        response = {
-            "version": WebService.VERSION,
-            "current_trial": 0,
-            "max_trial": MainWindow.currentGara.configuration.nTrials,
-            "current_user": 0,
-            "max_user": MainWindow.currentGara.configuration.nUsers,
-            "uuid": MainWindow.currentGara.local_uuid,
-            "description": MainWindow.currentGara.configuration.description,
-        }
+        response = MainWindow.currentGara.state()
+        response['version'] = WebService.VERSION
 
         # Write content as utf-8 data
         self.wfile.write(bytes(json.dumps(response), "utf8"))

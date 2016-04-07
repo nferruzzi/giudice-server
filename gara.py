@@ -37,7 +37,7 @@ class Config(Base):
     nUsers = Column(Integer)
     nTrials = Column(Integer)
     currentTrial = Column(Integer)
-
+    uuid = Column(String(250))
 
 class Gara(object):
     def __init__(self,
@@ -52,7 +52,7 @@ class Gara(object):
         self._date = date if date is not None else QDate.currentDate()
         self._nTrials = nTrials
         self._nUsers = nUsers
-        self.local_uuid = QUuid.createUuid().toString() + '.db'
+        self._uuid = QUuid.createUuid().toString() + '.db'
         self.current = current
 
     def createDB(self):
@@ -60,7 +60,7 @@ class Gara(object):
         if not self.current:
             self.engine = create_engine('sqlite:///:memory:')
         else:
-            self.engine = create_engine('sqlite:///' + 'temp/' + self.local_uuid)
+            self.engine = create_engine('sqlite:///' + 'temp/' + self._uuid)
 
         Base.metadata.create_all(self.engine)
         Base.metadata.bind = self.engine
@@ -74,7 +74,21 @@ class Gara(object):
         conf.nJudges = self._nJudges
         conf.nTrials = self._nTrials
         conf.nUsers = self._nUsers
+        conf.uuid = self._uuid
         conf.currentTrial = 0
+
         self.session.add(conf)
         self.session.commit()
         self.configuration = conf
+
+    def state(self):
+        # Send message back to client
+        state = {
+            "current_trial": self.configuration.currentTrial,
+            "max_trial": self.configuration.nTrials,
+            "latest_user": 0,
+            "max_user": self.configuration.nUsers,
+            "uuid": self.configuration.uuid,
+            "description": self.configuration.description,
+        }
+        return state
