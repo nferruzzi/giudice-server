@@ -36,22 +36,43 @@ class MyWSGIRefServer(ServerAdapter):
         self.server.serve_forever()
 
     def stop(self):
-        # self.server.server_close() <--- alternative but causes bad fd exception
+        # self.server.server_close() <--- alternative but causes bad
+        # fd exception
         self.server.shutdown()
+
+
+@webapp.error(401)
+@webapp.error(403)
+@webapp.error(404)
+@webapp.error(409)
+def error404(error):
+    print(error.body)
+    return error.body
 
 
 @webapp.get('/keepAlive/<judge>')
 def keepAlive(judge):
-    # Send message back to client
-    response = MainWindow.currentGara.state()
+    judge = int(judge)
+    gara = MainWindow.currentGara
+    response = gara.state()
     response['version'] = VERSION
     ua = request.headers.get('X-User-Auth')
     if ua is None:
         abort(401, {'error': 'no token'})
-    conflict = MainWindow.currentGara.registerJudgeWithUUID(judge, ua)
+    conflict = gara.registerJudgeWithUUID(judge, ua)
     if conflict:
         abort(403, {'error': 'judge in use'})
+    if judge <= 0 or judge >= gara.configuration.nJudges:
+        # should be 409 but QML XHTTPXmlRequest.status is bugged on android and
+        # return 0
+        abort(404, {
+            'error': 'judge not in range',
+            'max': gara.configuration.nJudges})
     return response
+
+@webapp.post("/vote")
+def vote():
+    pass
 
 
 class Controller (object):
