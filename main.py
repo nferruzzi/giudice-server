@@ -15,41 +15,54 @@ import socketserver
 import ui
 from gara import *
 import json
+from bottle import Bottle, run, get, post, request, ServerAdapter, abort
 
 global MainWindow
 
+VERSION = '1.0'
+webapp = Bottle()
 
-class WebService (http.server.BaseHTTPRequestHandler):
-    VERSION = '1.0'
 
-    def do_GET(self):
-        # Send response status code
-        self.send_response(200)
+class MyWSGIRefServer(ServerAdapter):
+    server = None
 
-        print(self.headers)
+    def run(self, handler):
+        from wsgiref.simple_server import make_server, WSGIRequestHandler
+        if self.quiet:
+            class QuietHandler(WSGIRequestHandler):
+                def log_request(*args, **kw): pass
+            self.options['handler_class'] = QuietHandler
+        self.server = make_server(self.host, self.port, handler, **self.options)
+        self.server.serve_forever()
 
-        # Send headers
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
+    def stop(self):
+        # self.server.server_close() <--- alternative but causes bad fd exception
+        self.server.shutdown()
 
-        # Send message back to client
-        response = MainWindow.currentGara.state()
-        response['version'] = WebService.VERSION
 
-        # Write content as utf-8 data
-        self.wfile.write(bytes(json.dumps(response), "utf8"))
-
-    def do_POST(self):
-        self.send_response(200)
+@webapp.get('/keepAlive/<judge>')
+def keepAlive(judge):
+    # Send message back to client
+    response = MainWindow.currentGara.state()
+    response['version'] = VERSION
+    ua = request.headers.get('X-User-Auth')
+    if ua is None:
+        abort(401, {'error': 'no token'})
+    conflict = MainWindow.currentGara.registerJudgeWithUUID(judge, ua)
+    if conflict:
+        abort(403, {'error': 'judge in use'})
+    return response
 
 
 class Controller (object):
     def listen(self):
         print("listening")
-        server_address = ('', 8000)
-        self.httpd = socketserver.TCPServer(server_address, WebService)
-        self.httpd.serve_forever()
+        self.server = MyWSGIRefServer(host="", port=8000)
+        run(webapp, server=self.server)
         print("done listening")
+
+    def shutdown(self):
+        self.server.stop()
 
 
 class DlgNewGara (QDialog):
@@ -121,5 +134,5 @@ if __name__ == '__main__':
     v = app.exec_()
 
     # shutdown
-    controller.httpd.shutdown()
+    controller.shutdown()
     sys.exit(v)

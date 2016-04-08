@@ -11,6 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
 import datetime
+import threading
 
 Base = declarative_base()
 
@@ -40,6 +41,9 @@ class Config(Base):
     uuid = Column(String(250))
 
 class Gara(object):
+
+    DONOT_ALLOW_DUPLICATE_JUDGES = True
+
     def __init__(self,
                  description="Non configurata",
                  nJudges=0,
@@ -54,6 +58,8 @@ class Gara(object):
         self._nUsers = nUsers
         self._uuid = QUuid.createUuid().toString() + '.db'
         self.current = current
+        self.lock = threading.RLock()
+        self.usersUUID = dict()
 
     def createDB(self):
         dd = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
@@ -92,3 +98,32 @@ class Gara(object):
             "description": self.configuration.description,
         }
         return state
+
+    def registerJudgeWithUUID(self, judge, uuid):
+        self.lock.acquire()
+
+        if self.DONOT_ALLOW_DUPLICATE_JUDGES:
+            # remove any judge with the same uuid
+            for k, v in list(self.usersUUID.items()):
+                if v == uuid and k != judge:
+                    print("Removed judge: {}".format(k))
+                    del self.usersUUID[k]
+
+            # register user
+            present = self.usersUUID.get(judge)
+            if present is None:
+                present = uuid
+                print("Add judge: {} -> {}".format(judge, present))
+                self.usersUUID[judge] = present
+            else:
+                if present != uuid:
+                    print("Judge conflict: {} -> {}")
+        else:
+            present = self.usersUUID.get(judge)
+            if present != uuid:
+                print("Judgle conflict detected")
+            present = uuid
+            self.usersUUID[judge] = uuid
+
+        self.lock.release()
+        return present != uuid
