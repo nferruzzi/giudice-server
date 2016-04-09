@@ -5,7 +5,8 @@ GaraServer
 Copyright 2016 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
 License: MIT (see LICENSE)
 """
-from PyQt5.QtCore import QUuid, QStandardPaths, QDate
+from PyQt5.QtCore import QUuid, QStandardPaths, QDate, QObject, pyqtSignal, \
+    QThread
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
@@ -44,11 +45,14 @@ class Config(Base):
     uuid = Column(String(250))
 
 
-class Gara(object):
+class Gara(QObject):
 
     DONOT_ALLOW_DUPLICATE_JUDGES = True
     activeInstance = None
     lock = threading.RLock()
+
+    # signal (trial, user, judge, vote)
+    vote_updated = pyqtSignal(int, int, int, float, name='voteUpdated')
 
     def __init__(self,
                  description="Non configurata",
@@ -57,6 +61,7 @@ class Gara(object):
                  nTrials=3,
                  nUsers=5,
                  current=False):
+        super(QObject, self).__init__()
         self._description = description
         self._nJudges = nJudges
         self._date = date if date is not None else QDate.currentDate()
@@ -193,5 +198,7 @@ class Gara(object):
                 user.vote6 = vote
 
             session.commit()
+            print("Sent: ", threading.currentThread(), QThread.currentThread())
+            self.vote_updated.emit(nTrial, nUser, judge, vote)
 
             return {}

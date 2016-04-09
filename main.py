@@ -7,10 +7,9 @@ License: MIT (see LICENSE)
 """
 
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, \
-    QLabel, QAbstractItemView, QHeaderView
-from PyQt5.QtCore import QDate, QCoreApplication, QTimer
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 import http.server
 import threading
 import socketserver
@@ -188,9 +187,20 @@ class GaraMainWindow (QMainWindow):
         Gara.setActiveInstance(gara)
         assert gara == Gara.activeInstance, "not the same"
         self.session = gara.scoped_session()
+        # gara is on a different thread but for Qt is the same
+        gara.vote_updated.connect(self.voteUpdated, Qt.QueuedConnection)
         print("UI Session:", self.session)
         self.updateUI()
         self.prepareModel(gara.getConfiguration(self.session))
+
+    @pyqtSlot(int, int, int, float)
+    def voteUpdated(self, trial, user, judge, vote):
+        print("Received: ", threading.currentThread(), QThread.currentThread())
+        print("Vote received by UI:", trial, user, judge, vote)
+        item = self.model.item(user-1, judge)
+        item.setText("{}".format(vote))
+        item = self.model.item(user-1, 0)
+        item.setText("{}".format(trial+1))
 
     def updateUI(self):
         gara = Gara.activeInstance
