@@ -30,10 +30,15 @@ def _e():
 
 def getSession(callback):
     def wrapper(*args, **kwargs):
-        scoped_session = Gara.activeInstance.scoped_session
+        gara = Gara.activeInstance
+        scoped_session = gara.scoped_session
         session = scoped_session()
         kwargs['session'] = session
+        kwargs['gara'] = gara
+
+        print("Gara: ", gara)
         print("Session created: ", session)
+
         try:
             body = callback(*args, **kwargs)
             return body
@@ -74,8 +79,8 @@ def error404(error):
 
 
 @webapp.get('/keepAlive/<judge>')
-def keepAlive(judge, session=None):
-    if session is None:
+def keepAlive(judge, session=None, gara=None):
+    if session is None or gara is None:
         abort(500, {'error': 'server not ready'})
 
     judge = int(judge)
@@ -102,8 +107,8 @@ def keepAlive(judge, session=None):
 
 
 @webapp.post("/vote")
-def vote(session):
-    if session is None:
+def vote(session, gara):
+    if session is None or gara is None:
         abort(500, {'error': 'server not ready'})
 
     ua = request.headers.get('X-User-Auth')
@@ -116,8 +121,6 @@ def vote(session):
     vote = float(request.json['vote'])
 
     print("Add vote: ", trial, judge, user, vote)
-
-    gara = Gara.activeInstance
     configuration = gara.getConfiguration(session)
 
     if trial != configuration.currentTrial:
@@ -182,6 +185,7 @@ class GaraMainWindow (QMainWindow):
         Gara.setActiveInstance(gara)
         self.session = gara.scoped_session()
         self.updateUI()
+        assert gara == Gara.activeInstance, "not the same"
         print("UI Session:", self.session)
 
     def updateUI(self):
