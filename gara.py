@@ -8,8 +8,9 @@ License: MIT (see LICENSE)
 from PyQt5.QtCore import QUuid, QStandardPaths, QDate
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 import datetime
 import threading
 
@@ -27,6 +28,7 @@ class User(Base):
     vote4 = Column(Float, nullable=True)
     vote5 = Column(Float, nullable=True)
     vote6 = Column(Float, nullable=True)
+    extra = Column(Integer, nullable=True)
 
 
 class Config(Base):
@@ -40,16 +42,19 @@ class Config(Base):
     currentTrial = Column(Integer)
     uuid = Column(String(250))
 
+
 class Gara(object):
 
     DONOT_ALLOW_DUPLICATE_JUDGES = True
+    activeInstance = None
+    lock = threading.RLock()
 
     def __init__(self,
                  description="Non configurata",
-                 nJudges=0,
+                 nJudges=6,
                  date=None,
-                 nTrials=0,
-                 nUsers=0,
+                 nTrials=1,
+                 nUsers=5,
                  current=False):
         self._description = description
         self._nJudges = nJudges
@@ -58,72 +63,107 @@ class Gara(object):
         self._nUsers = nUsers
         self._uuid = QUuid.createUuid().toString() + '.db'
         self.current = current
-        self.lock = threading.RLock()
         self.usersUUID = dict()
 
+    @staticmethod
+    def setActiveInstance(gara):
+        assert gara.scoped_session, "scoped session not available"
+        with Gara.lock:
+            Gara.activeInstance = gara
+            print("Set active instance: ", gara)
+
     def createDB(self):
-        dd = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
-        if not self.current:
-            self.engine = create_engine('sqlite:///:memory:')
-        else:
-            self.engine = create_engine('sqlite:///' + 'temp/' + self._uuid)
+        with self.lock:
+            where = QStandardPaths.DocumentsLocation
+            dd = QStandardPaths.writableLocation(where)
 
-        Base.metadata.create_all(self.engine)
-        Base.metadata.bind = self.engine
-        DBSession = sessionmaker(bind=self.engine)
-        self.session = DBSession()
-        conf = Config()
-        conf.description = self._description
-        conf.date = datetime.datetime(year=self._date.year(),
-                                      month=self._date.month(),
-                                      day=self._date.day())
-        conf.nJudges = self._nJudges
-        conf.nTrials = self._nTrials
-        conf.nUsers = self._nUsers
-        conf.uuid = self._uuid
-        conf.currentTrial = 0
+            if not self.current:
+                self.engine = create_engine('sqlite:///' + ':memory:',
+                                            connect_args={
+                                                'check_same_thread': False
+                                            },
+                                            poolclass=StaticPool, echo=True)
+            else:
+                self.engine = create_engine('sqlite:///'+'temp/'+self._uuid,
+                                            connect_args={
+                                                'check_same_thread': False
+                                            })
 
-        self.session.add(conf)
-        self.session.commit()
-        self.configuration = conf
+            Base.metadata.create_all(self.engine)
+            Base.metadata.bind = self.engine
 
-    def state(self):
-        # Send message back to client
-        state = {
-            "current_trial": self.configuration.currentTrial,
-            "max_trial": self.configuration.nTrials,
-            "latest_user": 0,
-            "max_user": self.configuration.nUsers,
-            "uuid": self.configuration.uuid,
-            "description": self.configuration.description,
-        }
-        return state
+            self.session_factory = sessionmaker(bind=self.engine)
+            self.scoped_session = scoped_session(self.session_factory)
+
+            session = self.scoped_session()
+            conf = Config()
+            conf.description = self._description
+            conf.date = datetime.datetime(year=self._date.year(),
+                                          month=self._date.month(),
+                                          day=self._date.day())
+            conf.nJudges = self._nJudges
+            conf.nTrials = self._nTrials
+            conf.nUsers = self._nUsers
+            conf.uuid = self._uuid
+            conf.currentTrial = 0
+
+            session.add(conf)
+            session.commit()
+
+            self.scoped_session.remove()
+
+    def getConfiguration(self, session):
+        return session.query(Config).first()
+
+    def state(self, session):
+        with self.lock:
+            configuration = self.getConfiguration(session)
+            # Send message back to client
+            state = {
+                "current_trial": configuration.currentTrial,
+                "max_trial": configuration.nTrials,
+                "latest_user": 0,
+                "max_user": configuration.nUsers,
+                "uuid": configuration.uuid,
+                "description": configuration.description,
+            }
+            return state
 
     def registerJudgeWithUUID(self, judge, uuid):
-        self.lock.acquire()
+        with self.lock:
+            if self.DONOT_ALLOW_DUPLICATE_JUDGES:
+                # remove any judge with the same uuid
+                for k, v in list(self.usersUUID.items()):
+                    if v == uuid and k != judge:
+                        print("Removed judge: {}".format(k))
+                        del self.usersUUID[k]
 
-        if self.DONOT_ALLOW_DUPLICATE_JUDGES:
-            # remove any judge with the same uuid
-            for k, v in list(self.usersUUID.items()):
-                if v == uuid and k != judge:
-                    print("Removed judge: {}".format(k))
-                    del self.usersUUID[k]
-
-            # register user
-            present = self.usersUUID.get(judge)
-            if present is None:
-                present = uuid
-                print("Add judge: {} -> {}".format(judge, present))
-                self.usersUUID[judge] = present
+                # register user
+                present = self.usersUUID.get(judge)
+                if present is None:
+                    present = uuid
+                    print("Add judge: {} -> {}".format(judge, present))
+                    self.usersUUID[judge] = present
+                else:
+                    if present != uuid:
+                        print("Judge conflict: {} -> {}")
             else:
+                present = self.usersUUID.get(judge)
                 if present != uuid:
-                    print("Judge conflict: {} -> {}")
-        else:
-            present = self.usersUUID.get(judge)
-            if present != uuid:
-                print("Judgle conflict detected")
-            present = uuid
-            self.usersUUID[judge] = uuid
+                    print("Judgle conflict detected")
+                present = uuid
+                self.usersUUID[judge] = uuid
 
-        self.lock.release()
-        return present != uuid
+            return present != uuid
+
+    def validJudge(self, judge, uuid):
+        with self.lock:
+            print(self.usersUUID)
+            v = self.usersUUID.get(judge)
+            if v is None:
+                return False
+            return v == uuid
+
+    def addRemoteVote(self, session, judge, uuid, trial, user, vote):
+        with self.lock:
+            return {}
