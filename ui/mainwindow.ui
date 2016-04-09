@@ -14,7 +14,7 @@
    <string>Giudice di gara v1.0</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
@@ -28,6 +28,10 @@
        <widget class="QLineEdit" name="currentTrial">
         <property name="enabled">
          <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(220, 220, 220);
+border-color: rgb(0, 0, 0);</string>
         </property>
         <property name="readOnly">
          <bool>true</bool>
@@ -80,6 +84,10 @@
           <height>0</height>
          </size>
         </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(220, 220, 220);
+border-color: rgb(0, 0, 0);</string>
+        </property>
         <property name="readOnly">
          <bool>true</bool>
         </property>
@@ -94,6 +102,10 @@
       </item>
       <item>
        <widget class="QLineEdit" name="usersCounter">
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(220, 220, 220);
+border-color: rgb(0, 0, 0);</string>
+        </property>
         <property name="readOnly">
          <bool>true</bool>
         </property>
@@ -118,6 +130,10 @@
           <height>0</height>
          </size>
         </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(220, 220, 220);
+border-color: rgb(0, 0, 0);</string>
+        </property>
         <property name="readOnly">
          <bool>true</bool>
         </property>
@@ -132,47 +148,158 @@
       </item>
       <item>
        <widget class="QGroupBox" name="groupBox">
+        <property name="maximumSize">
+         <size>
+          <width>200</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="title">
          <string>Opzioni atleta</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
+        <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="markNQ">
+           <property name="text">
+            <string>Marca non qualificato</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>64</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="sendToDisplay">
+           <property name="text">
+            <string>Mostra sul display</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_4">
              <property name="text">
-              <string>Marca non qualificato</string>
+              <string>Atleta:</string>
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_2">
-             <property name="text">
-              <string>Mostra sul display</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="verticalSpacer">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="userNumber">
+             <property name="maximumSize">
               <size>
-               <width>20</width>
-               <height>40</height>
+               <width>150</width>
+               <height>16777215</height>
               </size>
              </property>
-            </spacer>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(220, 220, 220);</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_3">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_6">
              <property name="text">
-              <string>Deseleziona</string>
+              <string>Media prova:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="userTrialAverage">
+             <property name="maximumSize">
+              <size>
+               <width>150</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(220, 220, 220);</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>Voto finale:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="userFinalVote">
+             <property name="maximumSize">
+              <size>
+               <width>150</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(220, 220, 220);</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>Bonus:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="userBonus">
+             <property name="maximumSize">
+              <size>
+               <width>150</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(220, 220, 220);</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
           </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>63</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="deselectRow">
+           <property name="text">
+            <string>Deseleziona</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
