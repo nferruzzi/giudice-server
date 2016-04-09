@@ -12,6 +12,7 @@ from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 import datetime
+import time
 import threading
 
 Base = declarative_base()
@@ -64,6 +65,7 @@ class Gara(object):
         self._uuid = QUuid.createUuid().toString() + '.db'
         self.current = current
         self.usersUUID = dict()
+        self.usersTIME = dict()
 
     @staticmethod
     def setActiveInstance(gara):
@@ -113,7 +115,8 @@ class Gara(object):
             self.scoped_session.remove()
 
     def getConfiguration(self, session):
-        return session.query(Config).first()
+        with self.lock:
+            return session.query(Config).first()
 
     def state(self, session):
         with self.lock:
@@ -154,6 +157,7 @@ class Gara(object):
                 present = uuid
                 self.usersUUID[judge] = uuid
 
+            self.usersTIME[uuid] = time.time()
             return present != uuid
 
     def validJudge(self, judge, uuid):
@@ -164,6 +168,30 @@ class Gara(object):
                 return False
             return v == uuid
 
-    def addRemoteVote(self, session, judge, uuid, trial, user, vote):
+    def addRemoteVote(self, session, judge, uuid, nTrial, nUser, vote):
         with self.lock:
+            if session.query(User).filter(User.trial==nTrial).filter(User.user==nUser).count() == 0:
+                print("Creating new row")
+                user = User()
+                user.user = nUser
+                user.trial = nTrial
+                session.add(user)
+            else:
+                user = session.query(User).filter(User.trial==nTrial).filter(User.user==nUser).first()
+
+            if judge == 1:
+                user.vote1 = vote
+            elif judge == 2:
+                user.vote2 = vote
+            elif judge == 3:
+                user.vote3 = vote
+            elif judge == 4:
+                user.vote4 = vote
+            elif judge == 5:
+                user.vote5 = vote
+            elif judge == 6:
+                user.vote6 = vote
+
+            session.commit()
+
             return {}
