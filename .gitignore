@@ -1,3 +1,6 @@
 *.pyc
 *.user
 temp/*
+build*
+dist/*
+
