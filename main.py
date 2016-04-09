@@ -7,8 +7,10 @@ License: MIT (see LICENSE)
 """
 
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, \
+    QLabel, QAbstractItemView, QHeaderView
 from PyQt5.QtCore import QDate, QCoreApplication, QTimer
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
 import http.server
 import threading
 import socketserver
@@ -184,15 +186,15 @@ class GaraMainWindow (QMainWindow):
     def setGara(self, gara):
         gara.createDB()
         Gara.setActiveInstance(gara)
-        self.session = gara.scoped_session()
-        self.updateUI()
         assert gara == Gara.activeInstance, "not the same"
+        self.session = gara.scoped_session()
         print("UI Session:", self.session)
+        self.updateUI()
+        self.prepareModel(gara.getConfiguration(self.session))
 
     def updateUI(self):
         gara = Gara.activeInstance
         configuration = gara.getConfiguration(self.session)
-        print("Configuration:", configuration)
 
         self.ui.description.setText(configuration.description)
 
@@ -202,9 +204,6 @@ class GaraMainWindow (QMainWindow):
 
         nusers = "{}/{}".format(0, configuration.nUsers)
         self.ui.usersCounter.setText(nusers)
-
-        ngiudici = "{}/{}".format(0, configuration.nJudges)
-        self.ui.judgesCounter.setText(ngiudici)
 
         stato = ""
         state_conn = _translate("MainWindow", "Connesso")
@@ -232,6 +231,26 @@ class GaraMainWindow (QMainWindow):
             stato += " | "
         self.statusLabel.setText(stato)
 
+    def prepareModel(self, configuration):
+        cols = 1+configuration.nJudges
+        rows = configuration.nUsers
+        self.model = QStandardItemModel(rows, cols)
+
+        labels = [_translate("MainWindow", "Prova")]
+        for j in range(1, configuration.nJudges+1):
+            labels.append(_translate("MainWindow", "Giudice {}").format(j))
+
+        self.model.setHorizontalHeaderLabels(labels)
+        for y in range(0, rows):
+            for x in range(0, cols):
+                item = QStandardItem("")
+                item.setEditable(False)
+                item.setSelectable(True)
+                self.model.setItem(y, x, item)
+        self.ui.tableView.setModel(self.model)
+        for i in range(0, len(self.ui.tableView.horizontalHeader())):
+            self.ui.tableView.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.ui = ui.Ui_MainWindow()
@@ -240,6 +259,9 @@ class GaraMainWindow (QMainWindow):
         self.showNuovaGara()
         self.statusLabel = QLabel(self.ui.statusbar)
         self.ui.statusbar.addPermanentWidget(self.statusLabel)
+        self.ui.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.tableView.setAlternatingRowColors(True)
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
         timer.start(1000)
