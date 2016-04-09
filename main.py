@@ -169,6 +169,7 @@ class DlgNewGara (QDialog):
                     nTrials=int(self.ui.prove.currentText()),
                     nUsers=int(self.ui.atleti.text()),
                     current=True)
+        gara.createDB()
         self.parent().setGara(gara)
         super().accept()
 
@@ -183,7 +184,6 @@ class GaraMainWindow (QMainWindow):
         dlg.show()
 
     def setGara(self, gara):
-        gara.createDB()
         Gara.setActiveInstance(gara)
         assert gara == Gara.activeInstance, "not the same"
         self.session = gara.scoped_session()
@@ -261,11 +261,23 @@ class GaraMainWindow (QMainWindow):
         for i in range(0, len(self.ui.tableView.horizontalHeader())):
             self.ui.tableView.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
+    def saveGara(self):
+        where = QStandardPaths.DocumentsLocation
+        dd = QStandardPaths.writableLocation(where)
+        filename = QFileDialog.getSaveFileName(self,
+                                               _translate("MainWindow", "Salva come..."),
+                                               dd,
+                                               _translate("MainWindow", "File di gara (*.gara *.db)"))
+        if filename:
+            print(filename)
+            Gara.activeInstance.saveAs(self.session, filename[0])
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.actionNuova_gara.triggered.connect(self.showNuovaGara)
+        self.ui.actionSalva.triggered.connect(self.saveGara)
         self.showNuovaGara()
         self.statusLabel = QLabel(self.ui.statusbar)
         self.ui.statusbar.addPermanentWidget(self.statusLabel)

@@ -15,6 +15,7 @@ from sqlalchemy.pool import StaticPool
 import datetime
 import time
 import threading
+import pathlib
 
 Base = declarative_base()
 
@@ -67,10 +68,16 @@ class Gara(QObject):
         self._date = date if date is not None else QDate.currentDate()
         self._nTrials = nTrials
         self._nUsers = nUsers
-        self._uuid = QUuid.createUuid().toString() + '.db'
+        self._uuid = QUuid.createUuid().toString()
         self.current = current
         self.usersUUID = dict()
         self.usersTIME = dict()
+        self._created = False
+        where = QStandardPaths.TempLocation
+        dd = QStandardPaths.writableLocation(where)
+        pd = pathlib.Path(dd)
+        pu = pathlib.Path(self._uuid + '.gara')
+        self._path = pd / pu
 
     @staticmethod
     def setActiveInstance(gara):
@@ -80,21 +87,16 @@ class Gara(QObject):
             print("Set active instance: ", gara)
 
     def createDB(self):
+        assert not self._created, "already created"
         with self.lock:
-            where = QStandardPaths.DocumentsLocation
-            dd = QStandardPaths.writableLocation(where)
+            self._created = True
+            print("Path: ", self._path)
 
-            if not self.current:
-                self.engine = create_engine('sqlite:///' + ':memory:',
-                                            connect_args={
-                                                'check_same_thread': False
-                                            },
-                                            poolclass=StaticPool, echo=False)
-            else:
-                self.engine = create_engine('sqlite:///'+'temp/'+self._uuid,
-                                            connect_args={
-                                                'check_same_thread': False
-                                            })
+            self.engine = create_engine('sqlite:///' + str(self._path),
+                                        connect_args={
+                                            'check_same_thread': False
+                                        },
+                                        echo=True)
 
             Base.metadata.create_all(self.engine)
             Base.metadata.bind = self.engine
