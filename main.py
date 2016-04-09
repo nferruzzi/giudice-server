@@ -7,8 +7,8 @@ License: MIT (see LICENSE)
 """
 
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDialog
-from PyQt5.QtCore import QDate
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QLabel
+from PyQt5.QtCore import QDate, QCoreApplication, QTimer
 import http.server
 import threading
 import socketserver
@@ -22,6 +22,7 @@ from traceback import format_exc, print_exc
 
 VERSION = '1.0'
 webapp = Bottle()
+_translate = QCoreApplication.translate
 
 
 def _e():
@@ -93,7 +94,7 @@ def keepAlive(judge, session=None, gara=None):
     if ua is None:
         abort(401, {'error': 'no token'})
 
-    if judge <= 0 or judge >= configuration.nJudges:
+    if judge <= 0 or judge > configuration.nJudges:
         # should be 409 but QML XHTTPXmlRequest.status is bugged on android and
         # return 0
         abort(404, {
@@ -189,7 +190,8 @@ class GaraMainWindow (QMainWindow):
         print("UI Session:", self.session)
 
     def updateUI(self):
-        configuration = Gara.activeInstance.getConfiguration(self.session)
+        gara = Gara.activeInstance
+        configuration = gara.getConfiguration(self.session)
         print("Configuration:", configuration)
 
         self.ui.description.setText(configuration.description)
@@ -204,12 +206,43 @@ class GaraMainWindow (QMainWindow):
         ngiudici = "{}/{}".format(0, configuration.nJudges)
         self.ui.judgesCounter.setText(ngiudici)
 
+        stato = ""
+        state_conn = _translate("MainWindow", "Connesso")
+        state_nconn = _translate("MainWindow", "Non connesso")
+
+        for i in range(1, configuration.nJudges+1):
+            val = gara.usersUUID.get(i)
+            if val is not None:
+                state = state_conn
+                lt = gara.usersTIME.get(val)
+                diff = time.time() - lt
+                if diff <= 3.0:
+                    color = "green"
+                elif diff <= 5.0:
+                    color = "yellow"
+                elif diff <= 10.0:
+                    color = "orange"
+                else:
+                    color = "red"
+                    state = state_nconn
+                sg = '<font color=\"{}\">{}</font>'.format(color, state)
+            else:
+                sg = '<font color=\"red\">{}</font>'.format(state_nconn)
+            stato += _translate("MainWindow", "Giudice {}: {}").format(i, sg)
+            stato += " | "
+        self.statusLabel.setText(stato)
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.actionNuova_gara.triggered.connect(self.showNuovaGara)
         self.showNuovaGara()
+        self.statusLabel = QLabel(self.ui.statusbar)
+        self.ui.statusbar.addPermanentWidget(self.statusLabel)
+        timer = QTimer(self)
+        timer.timeout.connect(self.updateUI)
+        timer.start(1000)
 
 if __name__ == '__main__':
     # empty Gara

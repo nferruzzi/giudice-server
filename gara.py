@@ -54,7 +54,7 @@ class Gara(object):
                  description="Non configurata",
                  nJudges=6,
                  date=None,
-                 nTrials=1,
+                 nTrials=3,
                  nUsers=5,
                  current=False):
         self._description = description
@@ -84,7 +84,7 @@ class Gara(object):
                                             connect_args={
                                                 'check_same_thread': False
                                             },
-                                            poolclass=StaticPool, echo=True)
+                                            poolclass=StaticPool, echo=False)
             else:
                 self.engine = create_engine('sqlite:///'+'temp/'+self._uuid,
                                             connect_args={
