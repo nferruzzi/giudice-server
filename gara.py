@@ -17,6 +17,9 @@ USER_DB_VERSION = 2
 MAX_JUDGES = 6
 MAX_TRIALS = 10
 
+Average_Aritmetica = 0
+Average_Mediata = 1
+
 
 def createTableV2(connection):
     cmd = """CREATE TABLE users (
@@ -40,6 +43,7 @@ date DATE,
 "nUsers" INTEGER,
 "nTrials" INTEGER,
 "currentTrial" INTEGER,
+"average" INTEGER,
 uuid VARCHAR(250),
 PRIMARY KEY (id)
 );
@@ -81,11 +85,11 @@ def dateFromSQLite(column):
 
 
 def setConfig(connection,
-              description, date, nJudges, nUsers, nTrials, uuid):
+              description, date, nJudges, nUsers, nTrials, average, uuid):
     assert isinstance(date, datetime.date)
     # we want just one conf
-    vals = (1, description, dateToSQLite(date), nJudges, nUsers, nTrials, 0, uuid)
-    connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", uuid) values(?,?,?,?,?,?,?,?)', vals)
+    vals = (1, description, dateToSQLite(date), nJudges, nUsers, nTrials, 0, average, uuid)
+    connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", average, uuid) values(?,?,?,?,?,?,?,?,?)', vals)
 
 
 def getConfig(connection):
@@ -98,7 +102,8 @@ def getConfig(connection):
             'nUsers': v[4],
             'nTrials': v[5],
             'currentTrial': v[6],
-            'uuid': v[7],
+            'average': v[7],
+            'uuid': v[8],
         }
     return None
 
@@ -152,6 +157,11 @@ def getUser(connection, user):
     return response
 
 
+def deleteTrialForUser(connection, trial, user):
+    query = 'delete from users where "user"=? AND "trial"=?'
+    connection.cursor().execute(query, (user, trial))
+
+
 class Gara(QObject):
 
     DONOT_ALLOW_DUPLICATE_JUDGES = True
@@ -160,6 +170,8 @@ class Gara(QObject):
 
     # signal (trial, user, judge, vote)
     vote_updated = pyqtSignal(int, int, int, float, name='voteUpdated')
+    # signal (trial, user)
+    vote_deleted = pyqtSignal(int, int, name='voteDeleted')
 
     def __init__(self,
                  description="Non configurata",
@@ -167,13 +179,15 @@ class Gara(QObject):
                  date=None,
                  nTrials=3,
                  nUsers=5,
-                 filename=None):
+                 filename=None,
+                 average=Average_Aritmetica):
         super(QObject, self).__init__()
         self._description = description
         self._nJudges = nJudges
         self._date = date if date is not None else QDate.currentDate()
         self._nTrials = nTrials
         self._nUsers = nUsers
+        self._average = average
         self._uuid = QUuid.createUuid().toString()
         self.usersUUID = dict()
         self.usersTIME = dict()
@@ -229,6 +243,7 @@ class Gara(QObject):
                           nJudges=self._nJudges,
                           nUsers=self._nUsers,
                           nTrials=self._nTrials,
+                          average=self._average,
                           uuid=self._uuid)
                 self._created = True
 
@@ -313,6 +328,12 @@ class Gara(QObject):
     def getUser(self, connection, user):
         with self.lock:
             return getUser(connection, user)
+
+    def deleteTrialForUser(self, connection, trial, user):
+        print("Delete user {} trial {}".format(user, trial))
+        with self.lock:
+            deleteTrialForUser(connection, trial, user)
+            self.vote_deleted.emit(trial, user)
 
 
 if __name__ == '__main__':

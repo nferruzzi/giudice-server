@@ -131,7 +131,7 @@ def vote(connection, gara):
     if not (0 <= user <= configuration['nUsers']):
         abort(403, {'code': 2, 'error': 'User not valid'})
 
-    if not (0 <= vote <= 10.00):
+    if not (0 <= vote <= 100.00):
         abort(403, {'code': 3, 'error': 'Vote not valid'})
 
     if not gara.validJudge(judge, ua):
@@ -162,10 +162,13 @@ class DlgNewGara (QDialog):
         self.ui.setupUi(self)
         self.setModal(True)
         self.ui.dateEdit.setDate(QDate.currentDate())
-        self.ui.numeroGiudici.setCurrentIndex(3)
-        self.ui.prove.setCurrentIndex(2)
+        self.ui.numeroGiudici.setCurrentIndex(5)
+        self.ui.prove.setCurrentIndex(3)
+        self.ui.radioButton.setChecked(True)
 
     def accept(self):
+        average = Average_Aritmetica if self.ui.radioButton.isChecked() else Average_Mediata
+
         where = QStandardPaths.DocumentsLocation
         dd = QStandardPaths.writableLocation(where)
 
@@ -183,6 +186,7 @@ class DlgNewGara (QDialog):
                         date=self.ui.dateEdit.date(),
                         nTrials=int(self.ui.prove.currentText()),
                         nUsers=int(self.ui.atleti.text()),
+                        average=average,
                         filename=filename[0])
             gara.createDB()
             self.parent().setGara(gara)
@@ -204,6 +208,7 @@ class GaraMainWindow (QMainWindow):
         self.connection = gara.getConnection()
         # gara is on a different thread but for Qt is the same
         gara.vote_updated.connect(self.voteUpdated, Qt.QueuedConnection)
+        gara.vote_deleted.connect(self.voteDeleted, Qt.QueuedConnection)
         print("UI connection:", self.connection)
         self.updateUI()
         self.prepareModel()
@@ -211,10 +216,14 @@ class GaraMainWindow (QMainWindow):
     @pyqtSlot(int, int, int, float)
     def voteUpdated(self, trial, user, judge, vote):
         print("Vote received by UI:", trial, user, judge, vote)
-        item = self.model.item(user-1, judge)
+        model = self.tables[trial].model()
+        # vote
+        item = model.item(user, judge)
         item.setText("{}".format(vote))
-        item = self.model.item(user-1, 0)
-        item.setText("{}".format(trial+1))
+        # # user
+        # item = model.item(user, 0)
+        # item.setText("{}".format(user))
+        self.tables[trial].showRow(user)
 
     @pyqtSlot()
     def updateUI(self):
@@ -233,6 +242,12 @@ class GaraMainWindow (QMainWindow):
 
         self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - {} (autosalvataggio)".format(gara.filename)))
         self.ui.description.setText(configuration['description'])
+
+        medie = {
+            Average_Aritmetica: _translate("MainWindow", "aritmetica"),
+            Average_Mediata: _translate("MainWindow", "mediata"),
+        }
+        self.ui.average.setText(medie[configuration['average']])
 
         ntrials = "{}/{}".format(configuration['currentTrial']+1,
                                  configuration['nTrials'])
@@ -271,65 +286,120 @@ class GaraMainWindow (QMainWindow):
         gara = Gara.activeInstance
         configuration = gara.getConfiguration(self.connection)
 
-        cols = 1+configuration['nJudges']
+        cols = configuration['nJudges'] + 1
         rows = configuration['nUsers']
-        self.model = QStandardItemModel(rows, cols)
+        trials = configuration['nTrials']
 
-        labels = [_translate("MainWindow", "Prova")]
+        labels = [_translate("MainWindow", "Pettorina")]
         for j in range(1, configuration['nJudges']+1):
             labels.append(_translate("MainWindow", "Giudice {}").format(j))
 
-        trial = configuration['currentTrial']
+        tables = []
+        models = []
 
-        self.model.setHorizontalHeaderLabels(labels)
-        for y in range(0, rows):
-            user = gara.getUser(self.connection, y+1)
-            votes = user['trials'][trial]
+        self.ui.tabWidget.clear()
+        for i in range(trials):
+            tv = QTableView(self)
+            tables.append(tv)
 
-            for x in range(0, cols):
-                item = QStandardItem("")
-                item.setEditable(False)
-                item.setSelectable(True)
-                # trial
-                if x == 0:
-                    item.setText(str(trial+1))
-                # votes
-                if x >= 1 and x <= configuration['nJudges']:
-                    if votes[x] is not None:
-                        item.setText(str(votes[x]))
-                self.model.setItem(y, x, item)
+            model = QStandardItemModel(rows, cols)
+            models.append(model)
 
-        self.ui.tableView.setModel(self.model)
-        for i in range(0, len(self.ui.tableView.horizontalHeader())):
-            self.ui.tableView.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+            model.setHorizontalHeaderLabels(labels)
 
-        m = self.ui.tableView.selectionModel()
-        m.currentRowChanged.connect(self.selection)
+            tv.setModel(model)
+            tv.setSelectionBehavior(QAbstractItemView.SelectRows)
+            tv.setSelectionMode(QAbstractItemView.SingleSelection)
+            tv.setAlternatingRowColors(True)
+            tv.verticalHeader().setVisible(False)
+
+            for h in range(0, len(tv.horizontalHeader())):
+                tv.horizontalHeader().setSectionResizeMode(h, QHeaderView.Stretch)
+
+            m = tv.selectionModel()
+            m.currentRowChanged.connect(lambda a, b, table=tv: self.selection(a, b, table))
+
+            self.ui.tabWidget.addTab(tv, _translate("MainWindow", "Prova {}".format(i+1)))
+
+        for y in range(0, rows+1):
+            user = gara.getUser(self.connection, y)
+            for trial in range(0, trials):
+                votes = user['trials'][trial]
+                mostra = False
+                for x in range(0, cols):
+                    item = QStandardItem("")
+                    item.setEditable(False)
+                    item.setSelectable(True)
+                    # pettorina
+                    if x == 0:
+                        item.setText(str(y))
+                    # votes
+                    if x >= 1 and x <= configuration['nJudges']:
+                        if votes[x] is not None:
+                            mostra = True
+                            item.setText(str(votes[x]))
+                    models[trial].setItem(y, x, item)
+                if not mostra:
+                    tables[trial].hideRow(y)
+
+        self.tables = tables
         self.deselect()
 
-    @pyqtSlot(QModelIndex, QModelIndex)
-    def selection(self, a, b):
-        user = Gara.activeInstance.getUser(self.connection, a.row()+1)
-        mainbuttons = [self.ui.markNQ, self.ui.sendToDisplay, self.ui.deselectRow]
+    def selection(self, a, b, table):
+        self.selected_user = a.row()
+        self.selected_trial = self.tables.index(table)
+
+        print("Selected user: {} trial: {}".format(self.selected_user, self.selected_trial))
+
+        user = Gara.activeInstance.getUser(self.connection, self.selected_user)
+        mainbuttons = [self.ui.retryTrial, self.ui.sendToDisplay, self.ui.deselectRow]
+
         for btn in mainbuttons:
             btn.setEnabled(True)
-        self.ui.userNumber.setText(str(a.row()+1))
+
+        self.ui.userNumber.setText(str(self.selected_user))
         self.ui.userTrialAverage.setText("")
         self.ui.userFinalVote.setText("")
         self.ui.userBonus.setText("")
 
     @pyqtSlot()
     def deselect(self):
-        m = self.ui.tableView.selectionModel()
-        if m:
-            m.clear()
-        mainbuttons = [self.ui.markNQ, self.ui.sendToDisplay, self.ui.deselectRow]
+        self.selected_user = None
+        self.selected_trial = None
+
+        for table in self.tables:
+            m = table.selectionModel()
+            if m:
+                m.clear()
+
+        mainbuttons = [self.ui.retryTrial, self.ui.sendToDisplay, self.ui.deselectRow]
         for btn in mainbuttons:
             btn.setEnabled(False)
+
         self.ui.userNumber.setText("")
         self.ui.userTrialAverage.setText("")
         self.ui.userFinalVote.setText("")
         self.ui.userBonus.setText("")
+
+    @pyqtSlot()
+    def retryTrial(self):
+        if self.selected_user is None or self.selected_trial is None:
+            return
+
+        testo = _translate("MainWindow", "Tutti i giudizi per la pettorina {} della prova {} verranno eliminati. Vuoi proseguire ?").format(self.selected_user, self.selected_trial+1)
+        dlg = QMessageBox.question(self, "Attenzione",
+                                   testo,
+                                   QMessageBox.Yes | QMessageBox.No)
+        if dlg == QMessageBox.Yes:
+            Gara.activeInstance.deleteTrialForUser(self.connection, self.selected_trial, self.selected_user)
+
+    @pyqtSlot(int, int)
+    def voteDeleted(self, trial, user):
+        table = self.tables[trial]
+        model = table.model()
+        for i in range(1, model.columnCount()):
+            item = model.item(user, i)
+            item.setText("")
 
     @pyqtSlot()
     def saveAs(self):
@@ -377,6 +447,7 @@ class GaraMainWindow (QMainWindow):
 
     def __init__(self):
         QMainWindow.__init__(self)
+        self.tables = []
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.actionNuova_gara.triggered.connect(self.showNuovaGara)
@@ -385,22 +456,20 @@ class GaraMainWindow (QMainWindow):
         self.showNuovaGara()
         self.statusLabel = QLabel(self.ui.statusbar)
         self.ui.statusbar.addPermanentWidget(self.statusLabel)
-        self.ui.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.ui.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.ui.tableView.setAlternatingRowColors(True)
-        self.ui.deselectRow.pressed.connect(self.deselect)
+        self.ui.deselectRow.released.connect(self.deselect)
+        self.ui.retryTrial.released.connect(self.retryTrial)
 
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
         timer.start(1000)
 
 if __name__ == '__main__':
-    debug = False
+    debug = True
     if debug:
         # empty Gara
         # gara = Gara(nJudges=2, nUsers=2, nTrials=2)
         # gara.createDB()
-        gara = Gara.fromFilename("/Users/nferruzzi/Documents/oki.gara")
+        gara = Gara.fromFilename("/Users/nferruzzi/Documents/aritmetica.gara")
         Gara.setActiveInstance(gara)
         assert gara == Gara.activeInstance, "not set"
         assert gara.connection, "connection not set"
