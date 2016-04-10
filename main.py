@@ -30,27 +30,27 @@ def _e():
     return sys.exc_info()[1]
 
 
-def getSession(callback):
+def getSqliteConnection(callback):
     def wrapper(*args, **kwargs):
         gara = Gara.activeInstance
-        scoped_session = gara.scoped_session
-        session = scoped_session()
-        kwargs['session'] = session
+        connection = gara.getConnection()
+        kwargs['connection'] = connection
         kwargs['gara'] = gara
 
         print("Gara: ", gara)
-        print("Session created: ", session)
+        print("Connection created: ", connection)
 
         try:
             body = callback(*args, **kwargs)
             return body
         finally:
-            scoped_session.remove()
-            print("Session removed")
+            connection.close()
+            print("Connection closed")
+            pass
 
     return wrapper
 
-webapp.install(getSession)
+webapp.install(getSqliteConnection)
 
 
 class MyWSGIRefServer(ServerAdapter):
@@ -81,21 +81,21 @@ def error404(error):
 
 
 @webapp.get('/keepAlive/<judge>')
-def keepAlive(judge, session=None, gara=None):
-    if session is None or gara is None:
+def keepAlive(judge, connection=None, gara=None):
+    if connection is None or gara is None:
         abort(500, {'error': 'server not ready'})
 
     judge = int(judge)
-    configuration = Gara.activeInstance.getConfiguration(session)
+    configuration = Gara.activeInstance.getConfiguration(connection)
 
-    response = gara.state(session)
+    response = gara.getState(connection)
     response['version'] = VERSION
 
     ua = request.headers.get('X-User-Auth')
     if ua is None:
         abort(401, {'error': 'no token'})
 
-    if judge <= 0 or judge > configuration.nJudges:
+    if judge <= 0 or judge > configuration['nJudges']:
         # should be 409 but QML XHTTPXmlRequest.status is bugged on android and
         # return 0
         abort(404, {
@@ -109,8 +109,8 @@ def keepAlive(judge, session=None, gara=None):
 
 
 @webapp.post("/vote")
-def vote(session, gara):
-    if session is None or gara is None:
+def vote(connection, gara):
+    if connection is None or gara is None:
         abort(500, {'error': 'server not ready'})
 
     ua = request.headers.get('X-User-Auth')
@@ -123,12 +123,12 @@ def vote(session, gara):
     vote = float(request.json['vote'])
 
     print("Add vote: ", trial, judge, user, vote)
-    configuration = gara.getConfiguration(session)
+    configuration = gara.getConfiguration(connection)
 
-    if trial != configuration.currentTrial:
+    if trial != configuration['currentTrial']:
         abort(403, {'code': 1, 'error': 'Trial not accepted'})
 
-    if not (0 <= user <= configuration.nUsers):
+    if not (0 <= user <= configuration['nUsers']):
         abort(403, {'code': 2, 'error': 'User not valid'})
 
     if not (0 <= vote <= 10.00):
@@ -137,7 +137,7 @@ def vote(session, gara):
     if not gara.validJudge(judge, ua):
         abort(403, {'code': 4, 'error': 'Judge not maching registered uuid'})
 
-    response = gara.addRemoteVote(session, judge, ua, trial, user, vote)
+    response = gara.addRemoteVote(connection, trial, user, judge, vote)
     return response
 
 
@@ -186,16 +186,15 @@ class GaraMainWindow (QMainWindow):
     def setGara(self, gara):
         Gara.setActiveInstance(gara)
         assert gara == Gara.activeInstance, "not the same"
-        self.session = gara.scoped_session()
+        self.connection = gara.getConnection()
         # gara is on a different thread but for Qt is the same
         gara.vote_updated.connect(self.voteUpdated, Qt.QueuedConnection)
-        print("UI Session:", self.session)
+        print("UI connection:", self.connection)
         self.updateUI()
-        self.prepareModel(gara.getConfiguration(self.session))
+        self.prepareModel(gara.getConfiguration(self.connection))
 
     @pyqtSlot(int, int, int, float)
     def voteUpdated(self, trial, user, judge, vote):
-        print("Received: ", threading.currentThread(), QThread.currentThread())
         print("Vote received by UI:", trial, user, judge, vote)
         item = self.model.item(user-1, judge)
         item.setText("{}".format(vote))
@@ -204,22 +203,22 @@ class GaraMainWindow (QMainWindow):
 
     def updateUI(self):
         gara = Gara.activeInstance
-        configuration = gara.getConfiguration(self.session)
+        configuration = gara.getConfiguration(self.connection)
 
-        self.ui.description.setText(configuration.description)
+        self.ui.description.setText(configuration['description'])
 
-        ntrials = "{}/{}".format(configuration.currentTrial+1,
-                                 configuration.nTrials)
+        ntrials = "{}/{}".format(configuration['currentTrial']+1,
+                                 configuration['nTrials'])
         self.ui.currentTrial.setText(ntrials)
 
-        nusers = "{}/{}".format(0, configuration.nUsers)
+        nusers = "{}/{}".format(0, configuration['nUsers'])
         self.ui.usersCounter.setText(nusers)
 
         stato = ""
         state_conn = _translate("MainWindow", "Connesso")
         state_nconn = _translate("MainWindow", "Non connesso")
 
-        for i in range(1, configuration.nJudges+1):
+        for i in range(1, configuration['nJudges']+1):
             val = gara.usersUUID.get(i)
             if val is not None:
                 state = state_conn
@@ -242,12 +241,12 @@ class GaraMainWindow (QMainWindow):
         self.statusLabel.setText(stato)
 
     def prepareModel(self, configuration):
-        cols = 1+configuration.nJudges
-        rows = configuration.nUsers
+        cols = 1+configuration['nJudges']
+        rows = configuration['nUsers']
         self.model = QStandardItemModel(rows, cols)
 
         labels = [_translate("MainWindow", "Prova")]
-        for j in range(1, configuration.nJudges+1):
+        for j in range(1, configuration['nJudges']+1):
             labels.append(_translate("MainWindow", "Giudice {}").format(j))
 
         self.model.setHorizontalHeaderLabels(labels)
@@ -270,7 +269,7 @@ class GaraMainWindow (QMainWindow):
                                                _translate("MainWindow", "File di gara (*.gara *.db)"))
         if filename:
             print(filename)
-            Gara.activeInstance.saveAs(self.session, filename[0])
+            Gara.activeInstance.saveAs(self.connection, filename[0])
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -294,7 +293,7 @@ if __name__ == '__main__':
     gara.createDB()
     Gara.setActiveInstance(gara)
     assert gara == Gara.activeInstance, "not set"
-    assert gara.scoped_session, "scoped_session not set"
+    assert gara.connection, "connection not set"
 
     # webservice
     controller = Controller()

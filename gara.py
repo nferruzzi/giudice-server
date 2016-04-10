@@ -5,45 +5,118 @@ GaraServer
 Copyright 2016 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
 License: MIT (see LICENSE)
 """
-from PyQt5.QtCore import QUuid, QStandardPaths, QDate, QObject, pyqtSignal, \
-    QThread
-from sqlalchemy import Column, ForeignKey, Integer, String, Float, Date
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker, scoped_session
-from sqlalchemy import create_engine
-from sqlalchemy.pool import StaticPool
+from PyQt5.QtCore import *
 import datetime
 import time
 import threading
 import pathlib
-
-Base = declarative_base()
-
-
-class User(Base):
-    __tablename__ = 'users'
-    id = Column(Integer, primary_key=True)
-    user = Column(Integer)
-    trial = Column(Integer)
-    vote1 = Column(Float, nullable=True)
-    vote2 = Column(Float, nullable=True)
-    vote3 = Column(Float, nullable=True)
-    vote4 = Column(Float, nullable=True)
-    vote5 = Column(Float, nullable=True)
-    vote6 = Column(Float, nullable=True)
-    extra = Column(Integer, nullable=True)
+import apsw
 
 
-class Config(Base):
-    __tablename__ = 'config'
-    id = Column(Integer, primary_key=True)
-    description = Column(String(250))
-    date = Column(Date)
-    nJudges = Column(Integer)
-    nUsers = Column(Integer)
-    nTrials = Column(Integer)
-    currentTrial = Column(Integer)
-    uuid = Column(String(250))
+USER_DB_VERSION = 2
+
+
+def createTableV2(connection):
+    cmd = """CREATE TABLE users (
+id INTEGER NOT NULL,
+user INTEGER NOT NULL,
+trial INTEGER,
+vote1 FLOAT,
+vote2 FLOAT,
+vote3 FLOAT,
+vote4 FLOAT,
+vote5 FLOAT,
+vote6 FLOAT,
+extra INTEGER,
+PRIMARY KEY (id)
+);
+CREATE TABLE config (
+id INTEGER NOT NULL,
+description VARCHAR(250),
+date DATE,
+"nJudges" INTEGER,
+"nUsers" INTEGER,
+"nTrials" INTEGER,
+"currentTrial" INTEGER,
+uuid VARCHAR(250),
+PRIMARY KEY (id)
+);
+CREATE TABLE bonus (
+user INTEGER NOT NULL,
+trial1 FLOAT,
+trial2 FLOAT,
+trial3 FLOAT,
+trial4 FLOAT,
+trial5 FLOAT,
+trial6 FLOAT,
+trial7 FLOAT,
+trial8 FLOAT,
+trial9 FLOAT,
+trial10 FLOAT,
+PRIMARY KEY (user)
+);
+PRAGMA user_version={};
+""".format(USER_DB_VERSION)
+    connection.cursor().execute(cmd)
+
+
+def checkDBVersion(connection):
+    for v, in connection.cursor().execute('PRAGMA user_version'):
+        return v
+    return None
+
+
+def dateToSQLite(d):
+    return d.strftime('%Y-%m-%d')
+
+
+def dateFromSQLite(column):
+    s = column.split('-')
+    year = int(s[0])
+    month = int(s[1])
+    day = int(s[2])
+    return datetime.date(year=year, month=month, day=day)
+
+
+def setConfig(connection,
+              description, date, nJudges, nUsers, nTrials, uuid):
+    assert isinstance(date, datetime.date)
+    # we want just one conf
+    vals = (1, description, dateToSQLite(date), nJudges, nUsers, nTrials, 0, uuid)
+    connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", uuid) values(?,?,?,?,?,?,?,?)', vals)
+
+
+def getConfig(connection):
+    query = "select * from config limit 1"
+    for v in connection.cursor().execute(query):
+        return {
+            'description': v[1],
+            'date': dateFromSQLite(v[2]),
+            'nJudges': v[3],
+            'nUsers': v[4],
+            'nTrials': v[5],
+            'currentTrial': v[6],
+            'uuid': v[7],
+        }
+    return None
+
+
+def addVote(connection, trial, user, judge, vote):
+    query = 'select * from users where user=? and trial=?'
+    trovato = None
+    vf = 'vote{}'.format(judge)
+    for v in connection.cursor().execute(query, (user, trial)):
+        trovato = v
+    if not trovato:
+        # insert
+        query = 'insert into users (trial, user, {}) values(?, ?, ?)'.format(vf)
+        connection.cursor().execute(query, (trial, user, vote))
+    else:
+        # update
+        query = 'update users set "{}"=? where id=?'.format(vf)
+        print(query, v)
+        connection.cursor().execute(query, (vote, v[0]))
+    return True
 
 
 class Gara(QObject):
@@ -81,61 +154,51 @@ class Gara(QObject):
 
     @staticmethod
     def setActiveInstance(gara):
-        assert gara.scoped_session, "scoped session not available"
+        assert gara.connection, "connection not available"
         with Gara.lock:
             Gara.activeInstance = gara
             print("Set active instance: ", gara)
 
+    def getConnection(self):
+        return apsw.Connection(str(self._path))
+
     def createDB(self):
         assert not self._created, "already created"
         with self.lock:
-            self._created = True
             print("Path: ", self._path)
 
-            self.engine = create_engine('sqlite:///' + str(self._path),
-                                        connect_args={
-                                            'check_same_thread': False
-                                        },
-                                        echo=True)
+            self.connection = self.getConnection()
 
-            Base.metadata.create_all(self.engine)
-            Base.metadata.bind = self.engine
+            if checkDBVersion(self.connection) == USER_DB_VERSION:
+                raise Exception("DB found on same location")
 
-            self.session_factory = sessionmaker(bind=self.engine)
-            self.scoped_session = scoped_session(self.session_factory)
+            with self.connection:
+                createTableV2(self.connection)
+                setConfig(self.connection,
+                          description=self._description,
+                          date=datetime.date(year=self._date.year(),
+                                             month=self._date.month(),
+                                             day=self._date.day()),
+                          nJudges=self._nJudges,
+                          nUsers=self._nUsers,
+                          nTrials=self._nTrials,
+                          uuid=self._uuid)
+                self._created = True
 
-            session = self.scoped_session()
-            conf = Config()
-            conf.description = self._description
-            conf.date = datetime.datetime(year=self._date.year(),
-                                          month=self._date.month(),
-                                          day=self._date.day())
-            conf.nJudges = self._nJudges
-            conf.nTrials = self._nTrials
-            conf.nUsers = self._nUsers
-            conf.uuid = self._uuid
-            conf.currentTrial = 0
-
-            session.add(conf)
-            session.commit()
-
-            self.scoped_session.remove()
-
-    def getConfiguration(self, session):
+    def getConfiguration(self, connection):
         with self.lock:
-            return session.query(Config).first()
+            return getConfig(connection)
 
-    def state(self, session):
+    def getState(self, connection):
         with self.lock:
-            configuration = self.getConfiguration(session)
-            # Send message back to client
+            configuration = self.getConfiguration(connection)
             state = {
-                "current_trial": configuration.currentTrial,
-                "max_trial": configuration.nTrials,
+                "current_trial": configuration['currentTrial'],
+                "max_trial": configuration['nTrials'],
                 "latest_user": 0,
-                "max_user": configuration.nUsers,
-                "uuid": configuration.uuid,
-                "description": configuration.description,
+                "max_user": configuration['nUsers'],
+                "uuid": configuration['uuid'],
+                "description": configuration['description'],
             }
             return state
 
@@ -169,38 +232,42 @@ class Gara(QObject):
 
     def validJudge(self, judge, uuid):
         with self.lock:
-            print(self.usersUUID)
             v = self.usersUUID.get(judge)
             if v is None:
                 return False
             return v == uuid
 
-    def addRemoteVote(self, session, judge, uuid, nTrial, nUser, vote):
+    def addRemoteVote(self, connection, trial, user, judge, vote):
         with self.lock:
-            if session.query(User).filter(User.trial==nTrial).filter(User.user==nUser).count() == 0:
-                print("Creating new row")
-                user = User()
-                user.user = nUser
-                user.trial = nTrial
-                session.add(user)
-            else:
-                user = session.query(User).filter(User.trial==nTrial).filter(User.user==nUser).first()
+            v = addVote(connection,
+                        trial=trial,
+                        user=user,
+                        judge=judge,
+                        vote=vote)
+            if v:
+                self.vote_updated.emit(trial, user, judge, vote)
+                return True
+            return False
 
-            if judge == 1:
-                user.vote1 = vote
-            elif judge == 2:
-                user.vote2 = vote
-            elif judge == 3:
-                user.vote3 = vote
-            elif judge == 4:
-                user.vote4 = vote
-            elif judge == 5:
-                user.vote5 = vote
-            elif judge == 6:
-                user.vote6 = vote
+    def saveAs(self, connection, filename):
+        with self.lock:
+            #target = pathlib.Path(filename)
+            #self._path.replace(target)
+            #session.execute('.backup MAIN "{}"'.format(filename))
+            print("Saved as:", target)
 
-            session.commit()
-            print("Sent: ", threading.currentThread(), QThread.currentThread())
-            self.vote_updated.emit(nTrial, nUser, judge, vote)
-
-            return {}
+if __name__ == '__main__':
+    c = apsw.Connection("pippo.db")
+    if checkDBVersion(c) != USER_DB_VERSION:
+        print("Creating")
+        createTableV2(c)
+        today = datetime.date.today()
+        setConfig(cur, "test", today, 6, 100, 3, "uuid")
+    print(getConfig(c))
+    addVote(c, 0, 1, 1, 6.0)
+    addVote(c, 0, 1, 2, 9.0)
+    addVote(c, 0, 1, 3, 9.0)
+    g = Gara()
+    g.createDB()
+    g.addRemoteVote(g.connection, trial=0, user=1, judge=4, vote=6.5)
+    print(g.getState(g.connection))
