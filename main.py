@@ -236,9 +236,12 @@ class GaraMainWindow (QMainWindow):
             return
 
         configuration = gara.getConfiguration(self.connection)
+        trial = configuration['currentTrial']
+        nt = configuration['nTrials']
 
         self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - {} (autosalvataggio)".format(gara.filename)))
         self.ui.description.setText(configuration['description'])
+        self.ui.nextTrialButton.setEnabled(trial+1 < nt)
 
         medie = {
             Average_Aritmetica: _translate("MainWindow", "aritmetica"),
@@ -246,8 +249,7 @@ class GaraMainWindow (QMainWindow):
         }
         self.ui.average.setText(medie[configuration['average']])
 
-        trial = configuration['currentTrial']
-        ntrials = "{}/{}".format(trial+1, configuration['nTrials'])
+        ntrials = "{}/{}".format(trial+1, nt)
         self.ui.currentTrial.setText(ntrials)
 
         done = gara.activeInstance.countDone(self.connection, trial)
@@ -480,6 +482,10 @@ class GaraMainWindow (QMainWindow):
             if ok:
                 self.ui.tabWidget.setCurrentIndex(trial)
 
+    @pyqtSlot(int)
+    def tabbarChanged(self, index):
+        self.deselect()
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.tables = []
@@ -494,6 +500,7 @@ class GaraMainWindow (QMainWindow):
         self.ui.deselectRow.released.connect(self.deselect)
         self.ui.retryTrial.released.connect(self.retryTrial)
         self.ui.nextTrialButton.released.connect(self.nextTrial)
+        self.ui.tabWidget.currentChanged.connect(self.tabbarChanged)
 
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
