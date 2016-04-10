@@ -173,7 +173,7 @@ class DlgNewGara (QDialog):
                                                _translate("MainWindow", "Salva come..."),
                                                dd,
                                                _translate("MainWindow", "File di gara (*.gara *.db)"))
-        if filename:
+        if filename != None and filename[0] != '':
             fn = filename[0]
             pn = pathlib.Path(fn)
             if pn.exists():
@@ -216,14 +216,16 @@ class GaraMainWindow (QMainWindow):
         item = self.model.item(user-1, 0)
         item.setText("{}".format(trial+1))
 
+    @pyqtSlot()
     def updateUI(self):
         gara = Gara.activeInstance
-        mainbuttons = [self.ui.nextTrialButton, self.ui.endButton, self.ui.markNQ, self.ui.sendToDisplay, self.ui.deselectRow]
+        mainbuttons = [self.ui.nextTrialButton, self.ui.endButton]
 
         for btn in mainbuttons:
             btn.setEnabled(gara is not None)
 
         if gara is None:
+            self.deselect()
             self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - non configurato"))
             return
 
@@ -303,32 +305,58 @@ class GaraMainWindow (QMainWindow):
 
         m = self.ui.tableView.selectionModel()
         m.currentRowChanged.connect(self.selection)
+        self.deselect()
 
     @pyqtSlot(QModelIndex, QModelIndex)
     def selection(self, a, b):
-        print(a.row())
         user = Gara.activeInstance.getUser(self.connection, a.row()+1)
-        print(user)
+        mainbuttons = [self.ui.markNQ, self.ui.sendToDisplay, self.ui.deselectRow]
+        for btn in mainbuttons:
+            btn.setEnabled(True)
+        self.ui.userNumber.setText(str(a.row()+1))
+        self.ui.userTrialAverage.setText("")
+        self.ui.userFinalVote.setText("")
+        self.ui.userBonus.setText("")
+
+    @pyqtSlot()
+    def deselect(self):
+        m = self.ui.tableView.selectionModel()
+        if m:
+            m.clear()
+        mainbuttons = [self.ui.markNQ, self.ui.sendToDisplay, self.ui.deselectRow]
+        for btn in mainbuttons:
+            btn.setEnabled(False)
+        self.ui.userNumber.setText("")
+        self.ui.userTrialAverage.setText("")
+        self.ui.userFinalVote.setText("")
+        self.ui.userBonus.setText("")
 
     @pyqtSlot()
     def saveAs(self):
+        if Gara.activeInstance is None:
+            return
         where = QStandardPaths.DocumentsLocation
         dd = QStandardPaths.writableLocation(where)
         filename = QFileDialog.getSaveFileName(self,
                                                _translate("MainWindow", "Salva come..."),
                                                dd,
                                                _translate("MainWindow", "File di gara (*.gara *.db)"))
-        if filename:
+
+        if filename != None and filename[0] != '':
             Gara.activeInstance.saveAs(self.connection, filename[0])
             QMessageBox.information(self, "", _translate("MainWindow", "Copia creata"), QMessageBox.Ok)
 
 
     @pyqtSlot()
     def open(self):
-        res = QMessageBox.warning(self,
-                                  _translate("MainWindo", "Attenzione"),
-                                  _translate("MainWindow", "La gara corrente verra' chiusa.\nVuoi continuare?"),
-                                  QMessageBox.Yes | QMessageBox.No)
+        if Gara.activeInstance is not None:
+            res = QMessageBox.warning(self,
+                                      _translate("MainWindow", "Attenzione"),
+                                      _translate("MainWindow", "La gara corrente verra' chiusa.\nVuoi continuare?"),
+                                      QMessageBox.Yes | QMessageBox.No)
+        else:
+            res = QMessageBox.Yes
+
         if res == QMessageBox.Yes:
             where = QStandardPaths.DocumentsLocation
             dd = QStandardPaths.writableLocation(where)
@@ -336,7 +364,7 @@ class GaraMainWindow (QMainWindow):
                                                    _translate("MainWindow", "Apri gara..."),
                                                    dd,
                                                    _translate("MainWindow", "File di gara (*.gara *.db)"))
-            if filename:
+            if filename != None and filename[0] != '':
                 try:
                     gara = Gara.fromFilename(filename[0])
                 except:
@@ -360,13 +388,14 @@ class GaraMainWindow (QMainWindow):
         self.ui.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
         self.ui.tableView.setAlternatingRowColors(True)
+        self.ui.deselectRow.pressed.connect(self.deselect)
 
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
         timer.start(1000)
 
 if __name__ == '__main__':
-    debug = True
+    debug = False
     if debug:
         # empty Gara
         # gara = Gara(nJudges=2, nUsers=2, nTrials=2)
