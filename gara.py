@@ -92,6 +92,21 @@ def setConfig(connection,
     connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", average, uuid) values(?,?,?,?,?,?,?,?,?)', vals)
 
 
+def advanceToNextTrial(connection):
+    config = getConfig(connection)
+    trial = config['currentTrial'] + 1
+    if trial >= config['nTrials']:
+        return (False, trial)
+    query = 'update config set "currentTrial"=? where id=1'
+    connection.cursor().execute(query, (trial,))
+    return (True, trial)
+
+
+def resetToTrial(connection, trial=0):
+    query = 'update config set "currentTrial"=? where id=1'
+    connection.cursor().execute(query, (trial,))
+
+
 def getConfig(connection):
     query = "select * from config limit 1"
     for v in connection.cursor().execute(query):
@@ -171,9 +186,10 @@ def getUser(connection, user):
 
     if len(trials) == nt:
         # abbiamo tutti i valori
-        finals = map(lambda x: x['score'], trials)
-        vote = sum(finals) / len(finals)
-        print(finals, vote)
+        finals = list(map(lambda x: x['score'], trials.values()))
+        if None not in finals:
+            vote = sum(finals) / len(finals)
+            response['result'] = vote
     else:
         for k in range(0, MAX_TRIALS):
             if trials.get(k) == None:
@@ -382,6 +398,10 @@ class Gara(QObject):
     def countDone(self, connection, trial):
         with self.lock:
             return countDone(connection, trial)
+
+    def advanceToNextTrial(self, connection):
+        with self.lock:
+            return advanceToNextTrial(connection)
 
 if __name__ == '__main__':
     c = apsw.Connection("pippo.db")

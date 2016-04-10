@@ -452,11 +452,22 @@ class GaraMainWindow (QMainWindow):
                     gara = Gara.fromFilename(filename[0])
                 except:
                     QMessageBox.critical(self,
-                                         _translate("MainWindo", "Errore"),
+                                         _translate("MainWindow", "Errore"),
                                          _translate("MainWindow", "Il file scelto non rappresenta un formato di gara valido"),
                                          QMessageBox.Ok)
                 else:
                     self.setGara(gara)
+
+    @pyqtSlot()
+    def nextTrial(self):
+        dlg = QMessageBox.information(self,
+                                      _translate("MainWindow", "Attenzione"),
+                                      _translate("MainWindow", "Avanzando di prova non sara' piu' possibile registrare voti per le prove precedenti. Proseguire ?"),
+                                      QMessageBox.Yes | QMessageBox.No)
+        if dlg == QMessageBox.Yes:
+            ok, trial = Gara.activeInstance.advanceToNextTrial(self.connection)
+            if ok:
+                self.ui.tabWidget.setCurrentIndex(trial)
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -471,19 +482,21 @@ class GaraMainWindow (QMainWindow):
         self.ui.statusbar.addPermanentWidget(self.statusLabel)
         self.ui.deselectRow.released.connect(self.deselect)
         self.ui.retryTrial.released.connect(self.retryTrial)
+        self.ui.nextTrialButton.released.connect(self.nextTrial)
 
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
         timer.start(1000)
 
 if __name__ == '__main__':
-    debug = False
+    debug = True
     if debug:
         # empty Gara
         # gara = Gara(nJudges=2, nUsers=2, nTrials=2)
         # gara.createDB()
         gara = Gara.fromFilename("/Users/nferruzzi/Documents/semplice.gara")
         Gara.setActiveInstance(gara)
+        resetToTrial(gara.getConnection(), 0)
         assert gara == Gara.activeInstance, "not set"
         assert gara.connection, "connection not set"
 
