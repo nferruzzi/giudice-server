@@ -256,7 +256,6 @@ class GaraMainWindow (QMainWindow):
         nusers = "{}/{}".format(done, configuration['nUsers'])
         self.ui.usersCounter.setText(nusers)
 
-
         stato = ""
         state_conn = _translate("MainWindow", "Connesso")
         state_nconn = _translate("MainWindow", "Non connesso")
@@ -283,6 +282,24 @@ class GaraMainWindow (QMainWindow):
             stato += " | "
         self.statusLabel.setText(stato)
 
+    def createTableAndModel(self, rows, cols, labels):
+        tv = QTableView(self)
+        model = QStandardItemModel(rows, cols)
+        model.setHorizontalHeaderLabels(labels)
+
+        tv.setModel(model)
+        tv.setSelectionBehavior(QAbstractItemView.SelectRows)
+        tv.setSelectionMode(QAbstractItemView.SingleSelection)
+        tv.setAlternatingRowColors(True)
+        tv.verticalHeader().setVisible(False)
+
+        for h in range(0, len(tv.horizontalHeader())):
+            tv.horizontalHeader().setSectionResizeMode(h, QHeaderView.Stretch)
+
+        m = tv.selectionModel()
+        m.currentRowChanged.connect(lambda a, b, table=tv: self.selection(a, b, table))
+        return (tv, model)
+
     def prepareModel(self):
         gara = Gara.activeInstance
         configuration = gara.getConfiguration(self.connection)
@@ -300,26 +317,9 @@ class GaraMainWindow (QMainWindow):
 
         self.ui.tabWidget.clear()
         for i in range(trials):
-            tv = QTableView(self)
+            tv, model = self.createTableAndModel(rows, cols, labels)
             tables.append(tv)
-
-            model = QStandardItemModel(rows, cols)
             models.append(model)
-
-            model.setHorizontalHeaderLabels(labels)
-
-            tv.setModel(model)
-            tv.setSelectionBehavior(QAbstractItemView.SelectRows)
-            tv.setSelectionMode(QAbstractItemView.SingleSelection)
-            tv.setAlternatingRowColors(True)
-            tv.verticalHeader().setVisible(False)
-
-            for h in range(0, len(tv.horizontalHeader())):
-                tv.horizontalHeader().setSectionResizeMode(h, QHeaderView.Stretch)
-
-            m = tv.selectionModel()
-            m.currentRowChanged.connect(lambda a, b, table=tv: self.selection(a, b, table))
-
             self.ui.tabWidget.addTab(tv, _translate("MainWindow", "Prova {}".format(i+1)))
 
         for y in range(0, rows+1):
@@ -333,7 +333,33 @@ class GaraMainWindow (QMainWindow):
                 self.updateTableRow(tables[trial], trial, y, configuration, user)
 
         self.tables = tables
+        self.createTableViewFromResults()
         self.deselect()
+
+    def createTableViewFromResults(self):
+        gara = Gara.activeInstance
+        configuration = gara.getConfiguration(self.connection)
+
+        rows = configuration['nUsers']
+        trials = configuration['nTrials']
+
+        labels = [_translate("MainWindow", "Pettorina")]
+        for j in range(0, trials):
+            labels.append(_translate("MainWindow", "Punteggio\nprova {}").format(j+1))
+        labels.append(_translate("MainWindow", "Media"))
+        labels.append(_translate("MainWindow", "Punteggio\ncon credito"))
+        labels.append(_translate("MainWindow", "Somma"))
+        cols = len(labels)
+        tv, model = self.createTableAndModel(rows, cols, labels)
+        for y in range(0, rows+1):
+            for x in range(0, cols):
+                item = QStandardItem("")
+                item.setEditable(False)
+                item.setSelectable(True)
+                model.setItem(y, x, item)
+            tv.hideRow(y)
+
+        self.ui.tabWidget.addTab(tv, _translate("MainWindow", "Risultati"))
 
     def updateTableRow(self, table, trial, row, configuration, user):
         mostra = False
