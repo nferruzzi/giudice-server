@@ -220,6 +220,13 @@ border-color: rgb(0, 0, 0);</string>
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="deselectRow">
+           <property name="text">
+            <string>Deseleziona</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="verticalSpacer">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -233,11 +240,55 @@ border-color: rgb(0, 0, 0);</string>
           </spacer>
          </item>
          <item>
+          <widget class="Line" name="line_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>63</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
           <layout class="QGridLayout" name="gridLayout">
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>Somma</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="userNumber">
+             <property name="maximumSize">
+              <size>
+               <width>150</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(220, 220, 220);</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
            <item row="2" column="0">
             <widget class="QLabel" name="label_6">
              <property name="text">
-              <string>Media prova</string>
+              <string>Punteggio
+prova</string>
              </property>
             </widget>
            </item>
@@ -257,16 +308,16 @@ border-color: rgb(0, 0, 0);</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
+           <item row="4" column="0">
             <widget class="QLabel" name="label_7">
              <property name="text">
               <string>Media
-complessiva</string>
+punteggio</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
-            <widget class="QLineEdit" name="userFinalVote">
+           <item row="4" column="1">
+            <widget class="QLineEdit" name="userAverageAll">
              <property name="maximumSize">
               <size>
                <width>150</width>
@@ -281,15 +332,16 @@ complessiva</string>
              </property>
             </widget>
            </item>
-           <item row="4" column="0">
+           <item row="5" column="0">
             <widget class="QLabel" name="label_8">
              <property name="text">
-              <string>Bonus</string>
+              <string>Punteggio
+con crediti</string>
              </property>
             </widget>
            </item>
-           <item row="4" column="1">
-            <widget class="QLineEdit" name="userBonus">
+           <item row="5" column="1">
+            <widget class="QLineEdit" name="userAverageAllAndBonus">
              <property name="maximumSize">
               <size>
                <width>150</width>
@@ -311,29 +363,6 @@ complessiva</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_10">
-             <property name="text">
-              <string>Prova</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="userNumber">
-             <property name="maximumSize">
-              <size>
-               <width>150</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(220, 220, 220);</string>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
            <item row="1" column="1">
             <widget class="QLineEdit" name="userTrial">
              <property name="maximumSize">
@@ -350,32 +379,48 @@ complessiva</string>
              </property>
             </widget>
            </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string>Prova</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QLineEdit" name="userSum">
+             <property name="maximumSize">
+              <size>
+               <width>150</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(220, 220, 220);</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <spacer name="verticalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>60</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
           </layout>
          </item>
          <item>
           <widget class="QPushButton" name="sendToDisplay">
            <property name="text">
             <string>Mostra sul display</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="verticalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>63</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="deselectRow">
-           <property name="text">
-            <string>Deseleziona</string>
            </property>
           </widget>
          </item>

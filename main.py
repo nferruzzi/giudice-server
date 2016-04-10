@@ -292,7 +292,7 @@ class GaraMainWindow (QMainWindow):
         labels = [_translate("MainWindow", "Pettorina")]
         for j in range(1, configuration['nJudges']+1):
             labels.append(_translate("MainWindow", "Giudice {}").format(j))
-        labels.append(_translate("MainWindow", "Media\nPunteggio"))
+        labels.append(_translate("MainWindow", "Punteggio\nprova"))
         tables = []
         models = []
 
@@ -363,17 +363,26 @@ class GaraMainWindow (QMainWindow):
         self.selected_trial = self.tables.index(table)
 
         print("Selected user: {} trial: {}".format(self.selected_user, self.selected_trial))
-
         user = Gara.activeInstance.getUser(self.connection, self.selected_user)
+
         mainbuttons = [self.ui.retryTrial, self.ui.sendToDisplay, self.ui.deselectRow]
 
         for btn in mainbuttons:
             btn.setEnabled(True)
 
         self.ui.userNumber.setText(str(self.selected_user))
-        self.ui.userTrialAverage.setText("")
-        self.ui.userFinalVote.setText("")
-        self.ui.userBonus.setText("")
+        self.ui.userTrial.setText(str(self.selected_trial+1))
+        score = user['trials'][self.selected_trial]['score']
+        self.ui.userTrialAverage.setText(str(score) if score != None else "")
+        results = user.get('results')
+        if results:
+            self.ui.userAverageAll.setText(str(results['average']))
+            self.ui.userAverageAllAndBonus.setText(str(results['average_bonus']))
+            self.ui.userSum.setText(str(results['sum']))
+        else:
+            self.ui.userAverageAll.setText("")
+            self.ui.userAverageAllAndBonus.setText("")
+            self.ui.userSum.setText("")
 
     @pyqtSlot()
     def deselect(self):
@@ -390,9 +399,11 @@ class GaraMainWindow (QMainWindow):
             btn.setEnabled(False)
 
         self.ui.userNumber.setText("")
+        self.ui.userTrial.setText("")
         self.ui.userTrialAverage.setText("")
-        self.ui.userFinalVote.setText("")
-        self.ui.userBonus.setText("")
+        self.ui.userAverageAll.setText("")
+        self.ui.userAverageAllAndBonus.setText("")
+        self.ui.userSum.setText("")
 
     @pyqtSlot()
     def retryTrial(self):
