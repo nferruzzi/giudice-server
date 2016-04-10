@@ -29,6 +29,12 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">background-color: rgb(220, 220, 220);
 border-color: rgb(0, 0, 0);</string>
@@ -96,12 +102,18 @@ border-color: rgb(0, 0, 0);</string>
       <item>
        <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>Numero atleti rimanenti</string>
+         <string>Atleti giudicati</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QLineEdit" name="usersCounter">
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">background-color: rgb(220, 220, 220);
 border-color: rgb(0, 0, 0);</string>
@@ -161,7 +173,7 @@ border-color: rgb(0, 0, 0);</string>
          <item>
           <widget class="QPushButton" name="markNQ">
            <property name="text">
-            <string>Marca non qualificato</string>
+            <string>Imposta non qualificato</string>
            </property>
           </widget>
          </item>
@@ -190,7 +202,7 @@ border-color: rgb(0, 0, 0);</string>
            <item row="0" column="0">
             <widget class="QLabel" name="label_4">
              <property name="text">
-              <string>Atleta:</string>
+              <string>Atleta</string>
              </property>
             </widget>
            </item>
@@ -213,7 +225,7 @@ border-color: rgb(0, 0, 0);</string>
            <item row="1" column="0">
             <widget class="QLabel" name="label_6">
              <property name="text">
-              <string>Media prova:</string>
+              <string>Media prova</string>
              </property>
             </widget>
            </item>
@@ -236,7 +248,8 @@ border-color: rgb(0, 0, 0);</string>
            <item row="2" column="0">
             <widget class="QLabel" name="label_7">
              <property name="text">
-              <string>Voto finale:</string>
+              <string>Media
+complessiva</string>
              </property>
             </widget>
            </item>
@@ -259,7 +272,7 @@ border-color: rgb(0, 0, 0);</string>
            <item row="3" column="0">
             <widget class="QLabel" name="label_8">
              <property name="text">
-              <string>Bonus:</string>
+              <string>Bonus</string>
              </property>
             </widget>
            </item>
@@ -323,7 +336,8 @@ border-color: rgb(0, 0, 0);</string>
     </property>
     <addaction name="actionNuova_gara"/>
     <addaction name="actionCarica"/>
-    <addaction name="actionSalva"/>
+    <addaction name="separator"/>
+    <addaction name="actionSaveAs"/>
     <addaction name="separator"/>
     <addaction name="actionGenera_rapporto"/>
    </widget>
@@ -344,22 +358,27 @@ border-color: rgb(0, 0, 0);</string>
   </action>
   <action name="actionCarica">
    <property name="text">
-    <string>Carica gara...</string>
+    <string>Apri gara...</string>
    </property>
   </action>
-  <action name="actionSalva">
+  <action name="actionSaveAs">
    <property name="text">
-    <string>Salva come...</string>
+    <string>Crea una copia...</string>
    </property>
   </action>
   <action name="actionConfigura">
    <property name="text">
-    <string>Bonus</string>
+    <string>Bonus atleti...</string>
    </property>
   </action>
   <action name="actionGenera_rapporto">
    <property name="text">
     <string>Genera rapporto...</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Salva</string>
    </property>
   </action>
  </widget>

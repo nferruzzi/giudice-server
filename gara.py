@@ -134,7 +134,7 @@ class Gara(QObject):
                  date=None,
                  nTrials=3,
                  nUsers=5,
-                 current=False):
+                 filename=None):
         super(QObject, self).__init__()
         self._description = description
         self._nJudges = nJudges
@@ -142,15 +142,17 @@ class Gara(QObject):
         self._nTrials = nTrials
         self._nUsers = nUsers
         self._uuid = QUuid.createUuid().toString()
-        self.current = current
         self.usersUUID = dict()
         self.usersTIME = dict()
         self._created = False
-        where = QStandardPaths.TempLocation
-        dd = QStandardPaths.writableLocation(where)
-        pd = pathlib.Path(dd)
-        pu = pathlib.Path(self._uuid + '.gara')
-        self._path = pd / pu
+        if filename:
+            self.filename = pathlib.Path(filename)
+        else:
+            where = QStandardPaths.TempLocation
+            dd = QStandardPaths.writableLocation(where)
+            pd = pathlib.Path(dd)
+            pu = pathlib.Path(self._uuid + '.gara')
+            self.filename = pd / pu
 
     @staticmethod
     def setActiveInstance(gara):
@@ -160,13 +162,11 @@ class Gara(QObject):
             print("Set active instance: ", gara)
 
     def getConnection(self):
-        return apsw.Connection(str(self._path))
+        return apsw.Connection(str(self.filename))
 
     def createDB(self):
         assert not self._created, "already created"
         with self.lock:
-            print("Path: ", self._path)
-
             self.connection = self.getConnection()
 
             if checkDBVersion(self.connection) == USER_DB_VERSION:
@@ -249,12 +249,20 @@ class Gara(QObject):
                 return True
             return False
 
+    def save(self, connection, filename):
+        self.properName = filename
+        self._uuid = filename
+
     def saveAs(self, connection, filename):
         with self.lock:
-            #target = pathlib.Path(filename)
-            #self._path.replace(target)
-            #session.execute('.backup MAIN "{}"'.format(filename))
-            print("Saved as:", target)
+            print("Saving as:", filename)
+            db = apsw.Connection(filename)
+            with db.backup("main", connection, "main") as b:
+                while not b.done:
+                    b.step(100)
+                    print(b.remaining, b.pagecount, "\r")
+            print("Saved.")
+
 
 if __name__ == '__main__':
     c = apsw.Connection("pippo.db")

@@ -14,12 +14,12 @@ import http.server
 import threading
 import socketserver
 import ui
-from gara import *
+import pathlib
 import json
+from gara import *
 from bottle import Bottle, run, get, post, request
 from bottle import ServerAdapter, abort, install
 from urllib.error import HTTPError
-from traceback import format_exc, print_exc
 
 VERSION = '1.0'
 webapp = Bottle()
@@ -33,7 +33,13 @@ def _e():
 def getSqliteConnection(callback):
     def wrapper(*args, **kwargs):
         gara = Gara.activeInstance
+        if gara is None:
+            abort(500, {'error': 'server not configured'})
+
         connection = gara.getConnection()
+        if connection is None:
+            abort(500, {'error': 'server internal error'})
+
         kwargs['connection'] = connection
         kwargs['gara'] = gara
 
@@ -82,9 +88,6 @@ def error404(error):
 
 @webapp.get('/keepAlive/<judge>')
 def keepAlive(judge, connection=None, gara=None):
-    if connection is None or gara is None:
-        abort(500, {'error': 'server not ready'})
-
     judge = int(judge)
     configuration = Gara.activeInstance.getConfiguration(connection)
 
@@ -110,9 +113,6 @@ def keepAlive(judge, connection=None, gara=None):
 
 @webapp.post("/vote")
 def vote(connection, gara):
-    if connection is None or gara is None:
-        abort(500, {'error': 'server not ready'})
-
     ua = request.headers.get('X-User-Auth')
     if ua is None:
         abort(401, {'error': 'no token'})
@@ -163,15 +163,26 @@ class DlgNewGara (QDialog):
         self.ui.prove.setCurrentIndex(2)
 
     def accept(self):
-        gara = Gara(description=self.ui.description.text(),
-                    nJudges=int(self.ui.numeroGiudici.currentText()),
-                    date=self.ui.dateEdit.date(),
-                    nTrials=int(self.ui.prove.currentText()),
-                    nUsers=int(self.ui.atleti.text()),
-                    current=True)
-        gara.createDB()
-        self.parent().setGara(gara)
-        super().accept()
+        where = QStandardPaths.DocumentsLocation
+        dd = QStandardPaths.writableLocation(where)
+
+        filename = QFileDialog.getSaveFileName(self,
+                                               _translate("MainWindow", "Salva come..."),
+                                               dd,
+                                               _translate("MainWindow", "File di gara (*.gara *.db)"))
+        if filename:
+            fn = filename[0]
+            pn = pathlib.Path(fn)
+            pn.unlink()
+            gara = Gara(description=self.ui.description.text(),
+                        nJudges=int(self.ui.numeroGiudici.currentText()),
+                        date=self.ui.dateEdit.date(),
+                        nTrials=int(self.ui.prove.currentText()),
+                        nUsers=int(self.ui.atleti.text()),
+                        filename=filename[0])
+            gara.createDB()
+            self.parent().setGara(gara)
+            super().accept()
 
     def reject(self):
         super().reject()
@@ -203,8 +214,13 @@ class GaraMainWindow (QMainWindow):
 
     def updateUI(self):
         gara = Gara.activeInstance
+        if gara is None:
+            self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - non configurato"))
+            return
+
         configuration = gara.getConfiguration(self.connection)
 
+        self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - {}".format(gara.filename)))
         self.ui.description.setText(configuration['description'])
 
         ntrials = "{}/{}".format(configuration['currentTrial']+1,
@@ -260,7 +276,7 @@ class GaraMainWindow (QMainWindow):
         for i in range(0, len(self.ui.tableView.horizontalHeader())):
             self.ui.tableView.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
-    def saveGara(self):
+    def saveAs(self):
         where = QStandardPaths.DocumentsLocation
         dd = QStandardPaths.writableLocation(where)
         filename = QFileDialog.getSaveFileName(self,
@@ -268,15 +284,16 @@ class GaraMainWindow (QMainWindow):
                                                dd,
                                                _translate("MainWindow", "File di gara (*.gara *.db)"))
         if filename:
-            print(filename)
             Gara.activeInstance.saveAs(self.connection, filename[0])
+            QMessageBox.information(self, "", _translate("MainWindow", "Copia creata"), QMessageBox.Ok)
+
 
     def __init__(self):
         QMainWindow.__init__(self)
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.actionNuova_gara.triggered.connect(self.showNuovaGara)
-        self.ui.actionSalva.triggered.connect(self.saveGara)
+        self.ui.actionSaveAs.triggered.connect(self.saveAs)
         self.showNuovaGara()
         self.statusLabel = QLabel(self.ui.statusbar)
         self.ui.statusbar.addPermanentWidget(self.statusLabel)
