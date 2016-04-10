@@ -477,7 +477,7 @@ class GaraMainWindow (QMainWindow):
         timer.start(1000)
 
 if __name__ == '__main__':
-    debug = True
+    debug = False
     if debug:
         # empty Gara
         # gara = Gara(nJudges=2, nUsers=2, nTrials=2)
