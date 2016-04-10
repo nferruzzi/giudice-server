@@ -132,27 +132,58 @@ def addVote(connection, trial, user, judge, vote):
 
 
 def getUser(connection, user):
+    conf = getConfig(connection)
+    nj = conf['nJudges']
+    nt = conf['nTrials']
+    average = conf['average']
     query = 'select trial, vote1, vote2, vote3, vote4, vote5, vote6 from users where user=?'
     response = {}
     trials = {}
 
-    for t, v1, v2, v3, v4, v5, v6 in connection.cursor().execute(query, (user,)):
+    for vals in connection.cursor().execute(query, (user,)):
+        t = vals[0]
+        vt = vals[1:]
         votes = {
-            1: v1,
-            2: v2,
-            3: v3,
-            4: v4,
-            5: v5,
-            6: v6,
+            1: vt[0],
+            2: vt[1],
+            3: vt[2],
+            4: vt[3],
+            5: vt[4],
+            6: vt[5],
         }
-        trials[t] = votes
 
-    for k in range(0, MAX_TRIALS):
-        if trials.get(k) == None:
-            votes = {}
-            for i in range(0, MAX_JUDGES):
-                votes[i+1] = None
-            trials[k] = votes
+        for i in range(nj+1, MAX_JUDGES+1):
+            del votes[i]
+
+        if None in votes:
+            score = None
+        else:
+            vt = votes.values()
+            if average == Average_Aritmetica:
+                score = sum(vt) / len(vt)
+            else:
+                score = (sum(vt) - (min(vt) - max(vt))) / (len(vt)-2)
+            score = float("{:0.2f}".format(score))
+
+        trials[t] = {}
+        trials[t]['votes'] = votes
+        trials[t]['score'] = score
+
+    if len(trials) == nt:
+        # abbiamo tutti i valori
+        finals = map(lambda x: x['score'], trials)
+        vote = sum(finals) / len(finals)
+        print(finals, vote)
+    else:
+        for k in range(0, MAX_TRIALS):
+            if trials.get(k) == None:
+                votes = {}
+                for i in range(0, MAX_JUDGES):
+                    votes[i+1] = None
+                trials[k] = {}
+                trials[k]['votes'] = votes
+                trials[k]['score'] = None
+
     response['trials'] = trials
     return response
 

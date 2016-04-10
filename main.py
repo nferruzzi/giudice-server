@@ -286,14 +286,14 @@ class GaraMainWindow (QMainWindow):
         gara = Gara.activeInstance
         configuration = gara.getConfiguration(self.connection)
 
-        cols = configuration['nJudges'] + 1
+        cols = configuration['nJudges'] + 2
         rows = configuration['nUsers']
         trials = configuration['nTrials']
 
         labels = [_translate("MainWindow", "Pettorina")]
         for j in range(1, configuration['nJudges']+1):
             labels.append(_translate("MainWindow", "Giudice {}").format(j))
-
+        labels.append(_translate("MainWindow", "Media\nPunteggio"))
         tables = []
         models = []
 
@@ -324,7 +324,7 @@ class GaraMainWindow (QMainWindow):
         for y in range(0, rows+1):
             user = gara.getUser(self.connection, y)
             for trial in range(0, trials):
-                votes = user['trials'][trial]
+                votes = user['trials'][trial]['votes']
                 mostra = False
                 for x in range(0, cols):
                     item = QStandardItem("")
@@ -338,6 +338,14 @@ class GaraMainWindow (QMainWindow):
                         if votes[x] is not None:
                             mostra = True
                             item.setText(str(votes[x]))
+                    # score
+                    if mostra:
+                        print(user['trials'][trial])
+                        
+                    if x == cols-1:
+                        score = user['trials'][trial]['score']
+                        if score is not None:
+                            item.setText(str(score))
                     models[trial].setItem(y, x, item)
                 if not mostra:
                     tables[trial].hideRow(y)
@@ -469,7 +477,7 @@ if __name__ == '__main__':
         # empty Gara
         # gara = Gara(nJudges=2, nUsers=2, nTrials=2)
         # gara.createDB()
-        gara = Gara.fromFilename("/Users/nferruzzi/Documents/aritmetica.gara")
+        gara = Gara.fromFilename("/Users/nferruzzi/Documents/semplice.gara")
         Gara.setActiveInstance(gara)
         assert gara == Gara.activeInstance, "not set"
         assert gara.connection, "connection not set"
