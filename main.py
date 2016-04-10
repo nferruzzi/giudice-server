@@ -229,7 +229,7 @@ class GaraMainWindow (QMainWindow):
 
         configuration = gara.getConfiguration(self.connection)
 
-        self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - {}".format(gara.filename)))
+        self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - {} (autosalvataggio)".format(gara.filename)))
         self.ui.description.setText(configuration['description'])
 
         ntrials = "{}/{}".format(configuration['currentTrial']+1,
@@ -310,6 +310,7 @@ class GaraMainWindow (QMainWindow):
         user = Gara.activeInstance.getUser(self.connection, a.row()+1)
         print(user)
 
+    @pyqtSlot()
     def saveAs(self):
         where = QStandardPaths.DocumentsLocation
         dd = QStandardPaths.writableLocation(where)
@@ -321,12 +322,31 @@ class GaraMainWindow (QMainWindow):
             Gara.activeInstance.saveAs(self.connection, filename[0])
             QMessageBox.information(self, "", _translate("MainWindow", "Copia creata"), QMessageBox.Ok)
 
+
+    @pyqtSlot()
+    def open(self):
+        res = QMessageBox.warning(self,
+                                  _translate("MainWindo", "Attenzione"),
+                                  _translate("MainWindow", "La gara corrente verra' chiusa.\nVuoi continuare?"),
+                                  QMessageBox.Yes | QMessageBox.No)
+        if res == QMessageBox.Yes:
+            where = QStandardPaths.DocumentsLocation
+            dd = QStandardPaths.writableLocation(where)
+            filename = QFileDialog.getOpenFileName(self,
+                                                   _translate("MainWindow", "Apri gara..."),
+                                                   dd,
+                                                   _translate("MainWindow", "File di gara (*.gara *.db)"))
+            if filename:
+                gara = Gara.fromFilename(filename[0])
+                self.setGara(gara)
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.actionNuova_gara.triggered.connect(self.showNuovaGara)
         self.ui.actionSaveAs.triggered.connect(self.saveAs)
+        self.ui.actionCarica.triggered.connect(self.open)
         self.showNuovaGara()
         self.statusLabel = QLabel(self.ui.statusbar)
         self.ui.statusbar.addPermanentWidget(self.statusLabel)
