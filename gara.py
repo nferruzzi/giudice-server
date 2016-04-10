@@ -185,12 +185,17 @@ def getUser(connection, user):
         trials[t]['score'] = score
 
     if len(trials) == nt:
-        # abbiamo tutti i valori
+        # we have all data needed to calc the results
         finals = list(map(lambda x: x['score'], trials.values()))
         if None not in finals:
-            vote = sum(finals) / len(finals)
-            response['result'] = vote
+            average = sum(finals) / len(finals)
+            results = {}
+            results['average'] = float("{:0.2f}".format(average))
+            results['average_bonus'] = float("{:0.2f}".format(average)) # + bonus
+            results['sum'] = float("{:0.2f}".format(sum(finals))) # + bonus
+            response['results'] = results
     else:
+        # fill with dummy data
         for k in range(0, MAX_TRIALS):
             if trials.get(k) == None:
                 votes = {}
@@ -199,6 +204,15 @@ def getUser(connection, user):
                 trials[k] = {}
                 trials[k]['votes'] = votes
                 trials[k]['score'] = None
+    # we need them ordered to create progessive averages
+    all_score = []
+    for i in range(0, len(trials)):
+        score = trials[i].get('score')
+        if score is None:
+            break
+        all_score.append(score)
+        avg = sum(all_score) / len(all_score)
+        trials[i]['average'] = float("{:0.2f}".format(avg))
 
     response['trials'] = trials
     return response
