@@ -155,7 +155,7 @@ def getUser(connection, user):
         for i in range(nj+1, MAX_JUDGES+1):
             del votes[i]
 
-        if None in votes:
+        if None in votes.values():
             score = None
         else:
             vt = votes.values()

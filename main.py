@@ -216,14 +216,11 @@ class GaraMainWindow (QMainWindow):
     @pyqtSlot(int, int, int, float)
     def voteUpdated(self, trial, user, judge, vote):
         print("Vote received by UI:", trial, user, judge, vote)
+        table = self.tables[trial]
+        configuration = Gara.activeInstance.getConfiguration(self.connection)
+        user_data = Gara.activeInstance.getUser(self.connection, user)
         model = self.tables[trial].model()
-        # vote
-        item = model.item(user, judge)
-        item.setText("{}".format(vote))
-        # # user
-        # item = model.item(user, 0)
-        # item.setText("{}".format(user))
-        self.tables[trial].showRow(user)
+        self.updateTableRow(table, trial, user, configuration, user_data)
 
     @pyqtSlot()
     def updateUI(self):
@@ -324,34 +321,40 @@ class GaraMainWindow (QMainWindow):
         for y in range(0, rows+1):
             user = gara.getUser(self.connection, y)
             for trial in range(0, trials):
-                votes = user['trials'][trial]['votes']
-                mostra = False
                 for x in range(0, cols):
                     item = QStandardItem("")
                     item.setEditable(False)
                     item.setSelectable(True)
-                    # pettorina
-                    if x == 0:
-                        item.setText(str(y))
-                    # votes
-                    if x >= 1 and x <= configuration['nJudges']:
-                        if votes[x] is not None:
-                            mostra = True
-                            item.setText(str(votes[x]))
-                    # score
-                    if mostra:
-                        print(user['trials'][trial])
-                        
-                    if x == cols-1:
-                        score = user['trials'][trial]['score']
-                        if score is not None:
-                            item.setText(str(score))
                     models[trial].setItem(y, x, item)
-                if not mostra:
-                    tables[trial].hideRow(y)
+                self.updateTableRow(tables[trial], trial, y, configuration, user)
 
         self.tables = tables
         self.deselect()
+
+    def updateTableRow(self, table, trial, row, configuration, user):
+        mostra = False
+        model = table.model()
+        votes = user['trials'][trial]['votes']
+        cols = model.columnCount()
+        for x in range(0, cols):
+            item = model.item(row, x)
+            # pettorina
+            if x == 0:
+                item.setText(str(row))
+            # votes
+            if x >= 1 and x <= configuration['nJudges']:
+                if votes[x] is not None:
+                    mostra = True
+                    item.setText(str(votes[x]))
+            # score
+            if x == cols-1:
+                score = user['trials'][trial]['score']
+                if score is not None:
+                    item.setText(str(score))
+        if mostra:
+            table.showRow(row)
+        else:
+            table.hideRow(row)
 
     def selection(self, a, b, table):
         self.selected_user = a.row()
