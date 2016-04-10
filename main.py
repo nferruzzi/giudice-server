@@ -337,8 +337,15 @@ class GaraMainWindow (QMainWindow):
                                                    dd,
                                                    _translate("MainWindow", "File di gara (*.gara *.db)"))
             if filename:
-                gara = Gara.fromFilename(filename[0])
-                self.setGara(gara)
+                try:
+                    gara = Gara.fromFilename(filename[0])
+                except:
+                    QMessageBox.critical(self,
+                                         _translate("MainWindo", "Errore"),
+                                         _translate("MainWindow", "Il file scelto non rappresenta un formato di gara valido"),
+                                         QMessageBox.Ok)
+                else:
+                    self.setGara(gara)
 
     def __init__(self):
         QMainWindow.__init__(self)
