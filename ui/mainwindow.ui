@@ -45,6 +45,30 @@ border-color: rgb(0, 0, 0);</string>
        </widget>
       </item>
       <item>
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Pettorine giudicate</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="usersCounter">
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(220, 220, 220);
+border-color: rgb(0, 0, 0);</string>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="nextTrialButton">
         <property name="text">
          <string>Fine prova</string>
@@ -111,30 +135,6 @@ border-color: rgb(0, 0, 0);</string>
         <property name="maximumSize">
          <size>
           <width>150</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: rgb(220, 220, 220);
-border-color: rgb(0, 0, 0);</string>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Atleti giudicati</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="usersCounter">
-        <property name="maximumSize">
-         <size>
-          <width>100</width>
           <height>16777215</height>
          </size>
         </property>

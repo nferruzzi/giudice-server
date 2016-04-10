@@ -246,12 +246,14 @@ class GaraMainWindow (QMainWindow):
         }
         self.ui.average.setText(medie[configuration['average']])
 
-        ntrials = "{}/{}".format(configuration['currentTrial']+1,
-                                 configuration['nTrials'])
+        trial = configuration['currentTrial']
+        ntrials = "{}/{}".format(trial+1, configuration['nTrials'])
         self.ui.currentTrial.setText(ntrials)
 
-        nusers = "{}/{}".format(0, configuration['nUsers'])
+        done = gara.activeInstance.countDone(self.connection, trial)
+        nusers = "{}/{}".format(done, configuration['nUsers'])
         self.ui.usersCounter.setText(nusers)
+
 
         stato = ""
         state_conn = _translate("MainWindow", "Connesso")

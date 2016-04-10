@@ -193,6 +193,19 @@ def deleteTrialForUser(connection, trial, user):
     connection.cursor().execute(query, (user, trial))
 
 
+def countDone(connection, trial):
+    configuration = getConfig(connection)
+    query = 'select count(*) from users where "trial"=? AND'
+    mv = []
+    for i in range(1, configuration['nJudges']+1):
+        mv.append('"vote{}" is not NULL'.format(i))
+    query += ' AND '.join(mv)
+    query += ';'
+    for v in connection.cursor().execute(query, (trial,)):
+        return v[0]
+    return 0
+
+
 class Gara(QObject):
 
     DONOT_ALLOW_DUPLICATE_JUDGES = True
@@ -366,6 +379,9 @@ class Gara(QObject):
             deleteTrialForUser(connection, trial, user)
             self.vote_deleted.emit(trial, user)
 
+    def countDone(self, connection, trial):
+        with self.lock:
+            return countDone(connection, trial)
 
 if __name__ == '__main__':
     c = apsw.Connection("pippo.db")
