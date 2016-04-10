@@ -103,7 +103,7 @@ def keepAlive(judge, connection=None, gara=None):
         # return 0
         abort(404, {
             'error': 'judge not in range',
-            'max': configuration.nJudges})
+            'max': configuration['nJudges']})
 
     conflict = gara.registerJudgeWithUUID(judge, ua)
     if conflict:
@@ -138,6 +138,9 @@ def vote(connection, gara):
         abort(403, {'code': 4, 'error': 'Judge not maching registered uuid'})
 
     response = gara.addRemoteVote(connection, trial, user, judge, vote)
+    if response.get('error'):
+        abort(403, response)
+
     return response
 
 
@@ -173,7 +176,8 @@ class DlgNewGara (QDialog):
         if filename:
             fn = filename[0]
             pn = pathlib.Path(fn)
-            pn.unlink()
+            if pn.exists():
+                pn.unlink()
             gara = Gara(description=self.ui.description.text(),
                         nJudges=int(self.ui.numeroGiudici.currentText()),
                         date=self.ui.dateEdit.date(),
@@ -202,7 +206,7 @@ class GaraMainWindow (QMainWindow):
         gara.vote_updated.connect(self.voteUpdated, Qt.QueuedConnection)
         print("UI connection:", self.connection)
         self.updateUI()
-        self.prepareModel(gara.getConfiguration(self.connection))
+        self.prepareModel()
 
     @pyqtSlot(int, int, int, float)
     def voteUpdated(self, trial, user, judge, vote):
@@ -214,6 +218,11 @@ class GaraMainWindow (QMainWindow):
 
     def updateUI(self):
         gara = Gara.activeInstance
+        mainbuttons = [self.ui.nextTrialButton, self.ui.endButton, self.ui.markNQ, self.ui.sendToDisplay, self.ui.deselectRow]
+
+        for btn in mainbuttons:
+            btn.setEnabled(gara is not None)
+
         if gara is None:
             self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - non configurato"))
             return
@@ -256,7 +265,10 @@ class GaraMainWindow (QMainWindow):
             stato += " | "
         self.statusLabel.setText(stato)
 
-    def prepareModel(self, configuration):
+    def prepareModel(self):
+        gara = Gara.activeInstance
+        configuration = gara.getConfiguration(self.connection)
+
         cols = 1+configuration['nJudges']
         rows = configuration['nUsers']
         self.model = QStandardItemModel(rows, cols)
@@ -265,16 +277,38 @@ class GaraMainWindow (QMainWindow):
         for j in range(1, configuration['nJudges']+1):
             labels.append(_translate("MainWindow", "Giudice {}").format(j))
 
+        trial = configuration['currentTrial']
+
         self.model.setHorizontalHeaderLabels(labels)
         for y in range(0, rows):
+            user = gara.getUser(self.connection, y+1)
+            votes = user['trials'][trial]
+
             for x in range(0, cols):
                 item = QStandardItem("")
                 item.setEditable(False)
                 item.setSelectable(True)
+                # trial
+                if x == 0:
+                    item.setText(str(trial+1))
+                # votes
+                if x >= 1 and x <= configuration['nJudges']:
+                    if votes[x] is not None:
+                        item.setText(str(votes[x]))
                 self.model.setItem(y, x, item)
+
         self.ui.tableView.setModel(self.model)
         for i in range(0, len(self.ui.tableView.horizontalHeader())):
             self.ui.tableView.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+
+        m = self.ui.tableView.selectionModel()
+        m.currentRowChanged.connect(self.selection)
+
+    @pyqtSlot(QModelIndex, QModelIndex)
+    def selection(self, a, b):
+        print(a.row())
+        user = Gara.activeInstance.getUser(self.connection, a.row()+1)
+        print(user)
 
     def saveAs(self):
         where = QStandardPaths.DocumentsLocation
@@ -286,7 +320,6 @@ class GaraMainWindow (QMainWindow):
         if filename:
             Gara.activeInstance.saveAs(self.connection, filename[0])
             QMessageBox.information(self, "", _translate("MainWindow", "Copia creata"), QMessageBox.Ok)
-
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -300,17 +333,21 @@ class GaraMainWindow (QMainWindow):
         self.ui.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
         self.ui.tableView.setAlternatingRowColors(True)
+
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
         timer.start(1000)
 
 if __name__ == '__main__':
-    # empty Gara
-    gara = Gara()
-    gara.createDB()
-    Gara.setActiveInstance(gara)
-    assert gara == Gara.activeInstance, "not set"
-    assert gara.connection, "connection not set"
+    debug = True
+    if debug:
+        # empty Gara
+        # gara = Gara(nJudges=2, nUsers=2, nTrials=2)
+        # gara.createDB()
+        gara = Gara.fromFilename("/Users/nferruzzi/Documents/oki.gara")
+        Gara.setActiveInstance(gara)
+        assert gara == Gara.activeInstance, "not set"
+        assert gara.connection, "connection not set"
 
     # webservice
     controller = Controller()
@@ -320,7 +357,8 @@ if __name__ == '__main__':
     # main ui
     app = QApplication(sys.argv)
     MainWindow = GaraMainWindow()
-    MainWindow.setGara(gara)
+    if debug:
+        MainWindow.setGara(gara)
     MainWindow.show()
     v = app.exec_()
 

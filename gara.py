@@ -14,6 +14,8 @@ import apsw
 
 
 USER_DB_VERSION = 2
+MAX_JUDGES = 6
+MAX_TRIALS = 10
 
 
 def createTableV2(connection):
@@ -102,21 +104,52 @@ def getConfig(connection):
 
 
 def addVote(connection, trial, user, judge, vote):
+    assert judge > 0, "judge starts from 1"
     query = 'select * from users where user=? and trial=?'
     trovato = None
     vf = 'vote{}'.format(judge)
     for v in connection.cursor().execute(query, (user, trial)):
         trovato = v
     if not trovato:
-        # insert
+        print("Insert vote")
         query = 'insert into users (trial, user, {}) values(?, ?, ?)'.format(vf)
         connection.cursor().execute(query, (trial, user, vote))
     else:
         # update
+        print("Update vote")
+        current = v[2+judge]
+        if current is not None:
+            print("Duplicated vote for user {} judge {}".format(user, judge))
+            return False
         query = 'update users set "{}"=? where id=?'.format(vf)
-        print(query, v)
         connection.cursor().execute(query, (vote, v[0]))
     return True
+
+
+def getUser(connection, user):
+    query = 'select trial, vote1, vote2, vote3, vote4, vote5, vote6 from users where user=?'
+    response = {}
+    trials = {}
+
+    for t, v1, v2, v3, v4, v5, v6 in connection.cursor().execute(query, (user,)):
+        votes = {
+            1: v1,
+            2: v2,
+            3: v3,
+            4: v4,
+            5: v5,
+            6: v6,
+        }
+        trials[t] = votes
+
+    for k in range(0, MAX_TRIALS):
+        if trials.get(k) == None:
+            votes = {}
+            for i in range(0, MAX_JUDGES):
+                votes[i+1] = None
+            trials[k] = votes
+    response['trials'] = trials
+    return response
 
 
 class Gara(QObject):
@@ -155,6 +188,12 @@ class Gara(QObject):
             self.filename = pd / pu
 
     @staticmethod
+    def fromFilename(filename):
+        gara = Gara(filename=filename)
+        gara.openDB()
+        return gara
+
+    @staticmethod
     def setActiveInstance(gara):
         assert gara.connection, "connection not available"
         with Gara.lock:
@@ -162,7 +201,15 @@ class Gara(QObject):
             print("Set active instance: ", gara)
 
     def getConnection(self):
-        return apsw.Connection(str(self.filename))
+        with self.lock:
+            return apsw.Connection(str(self.filename))
+
+    def openDB(self):
+        with self.lock:
+            self.connection = self.getConnection()
+            if checkDBVersion(self.connection) != USER_DB_VERSION:
+                raise Exception("DB not compatible")
+            self._created = True
 
     def createDB(self):
         assert not self._created, "already created"
@@ -246,8 +293,8 @@ class Gara(QObject):
                         vote=vote)
             if v:
                 self.vote_updated.emit(trial, user, judge, vote)
-                return True
-            return False
+                return {}
+            return {'code': 5, 'error': 'duplicate'}
 
     def save(self, connection, filename):
         self.properName = filename
@@ -262,6 +309,10 @@ class Gara(QObject):
                     b.step(100)
                     print(b.remaining, b.pagecount, "\r")
             print("Saved.")
+
+    def getUser(self, connection, user):
+        with self.lock:
+            return getUser(connection, user)
 
 
 if __name__ == '__main__':
