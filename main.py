@@ -248,7 +248,7 @@ class GaraMainWindow (QMainWindow):
 
         self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - {} (autosalvataggio)".format(gara.filename)))
         self.ui.description.setText(configuration['description'])
-        self.ui.nextTrialButton.setEnabled(trial+1 < nt)
+        self.ui.nextTrialButton.setEnabled(trial+1 < nt and configuration['state'] == State_Running)
         self.ui.startButton.setEnabled(configuration['state'] == State_Configure)
         self.ui.endButton.setEnabled(configuration['state'] == State_Running)
 
@@ -360,6 +360,7 @@ class GaraMainWindow (QMainWindow):
         labels.append(_translate("MainWindow", "Somma"))
         cols = len(labels)
         tv, model = self.createTableAndModel(rows, cols, labels)
+        self.tables.append(tv)
         for y in range(0, rows+1):
             for x in range(0, cols):
                 item = QStandardItem("")
@@ -396,16 +397,22 @@ class GaraMainWindow (QMainWindow):
             table.hideRow(row)
 
     def selection(self, a, b, table):
+        if table == self.tables[-1]:
+            # special Results causes, let's pretend its the latest trial
+            self.selected_trial = self.tables.index(table) - 1
+        else:
+            self.selected_trial = self.tables.index(table)
         self.selected_user = a.row()
-        self.selected_trial = self.tables.index(table)
 
         print("Selected user: {} trial: {}".format(self.selected_user, self.selected_trial))
         user = Gara.activeInstance.getUser(self.connection, self.selected_user)
+        configuration = Gara.activeInstance.getConfiguration(self.connection)
 
-        mainbuttons = [self.ui.retryTrial, self.ui.sendToDisplay, self.ui.deselectRow]
-
+        mainbuttons = [self.ui.sendToDisplay, self.ui.deselectRow]
         for btn in mainbuttons:
             btn.setEnabled(True)
+
+        self.ui.retryTrial.setEnabled(configuration['state'] == State_Running)
 
         self.ui.userNumber.setText(str(self.selected_user))
         self.ui.userTrial.setText(str(self.selected_trial+1))
@@ -532,7 +539,39 @@ class GaraMainWindow (QMainWindow):
 
     @pyqtSlot()
     def end(self):
-        pass
+        dlg = QMessageBox.information(self,
+                                      _translate("MainWindow", "Attenzione"),
+                                      _translate("MainWindow", "Fermando la gara non saranno accettati piu' dati in ingresso e la gara verra' considerata conclusa allo stato attuale. Proseguire ?"),
+                                      QMessageBox.Yes | QMessageBox.No)
+        if dlg == QMessageBox.Yes:
+            Gara.activeInstance.setState(self.connection, State_Completed)
+            self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count()-1)
+            self.deselect()
+            self.fillTableWithResults(self.tables[-1])
+
+    def fillTableWithResults(self, table):
+        model = table.model()
+        configuration = Gara.activeInstance.getConfiguration(self.connection)
+        rows = configuration['nUsers']
+        for row in range(0, rows+1):
+            user = Gara.activeInstance.getUser(self.connection, row)
+            results = user.get('results')
+            if results:
+                vals = []
+                vals.append(str(row))
+                for trial in range(0, configuration['nTrials']):
+                    score = user['trials'][trial]['score']
+                    vals.append(str(score))
+                vals.append(str(results['average']))
+                vals.append(str(results['average_bonus']))
+                vals.append(str(results['sum']))
+                cols = model.columnCount()
+                for x in range(0, cols):
+                    item = model.item(row, x)
+                    item.setText(vals[x])
+                table.showRow(row)
+            else:
+                table.hideRow(row)
 
     def __init__(self):
         QMainWindow.__init__(self)
