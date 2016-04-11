@@ -72,6 +72,63 @@ PRAGMA user_version={};
     connection.cursor().execute(cmd)
 
 
+def getUserInfo(connection, user):
+    query = 'select * from credits where user=?'
+    for v in connection.cursor().execute(query, (user,)):
+        vals = v[1:11]
+        return {
+            'nickname': v[11],
+            'credits': vals
+        }
+    return None
+
+def updateUserInfo(connection, user, payload):
+    print("Payloads:", payload)
+    with connection:
+        cols = []
+        vals = []
+        ques = []
+        vks = []
+        n = payload.get(0)
+        if n is not None:
+            cols.append('nickname')
+            vals.append(n)
+            ques.append('?')
+            vks.append('nickname=?')
+        for i in range(1, MAX_TRIALS+1):
+            c = payload.get(i)
+            if c:
+                e = 'trial{}'.format(i)
+                cols.append(e)
+                vals.append(c)
+                ques.append('?')
+                vks.append('{}=?'.format(e))
+
+        query = 'select * from credits where user=?'
+        cursor = connection.cursor()
+        update = False
+        for values in cursor.execute(query, (user,)):
+            update = True
+            break
+
+        if update:
+            vk = ", ".join(vks)
+            print(vk)
+            query = 'update credits set {} where user=?'.format(vk)
+            vals.append(user)
+            print("Update credits: ", query, vals)
+            cursor.execute(query, vals)
+        else:
+            cols.append('user')
+            vals.append(user)
+            ques.append('?')
+            cn = ", ".join(cols)
+            vn = ", ".join(ques)
+            query = 'insert into credits ({}) values ({})'.format(cn, vn)
+            cursor.execute(query, vals)
+            print("New credits:", query, vals)
+
+
 def checkDBVersion(connection):
     for v, in connection.cursor().execute('PRAGMA user_version'):
         return v
@@ -95,7 +152,7 @@ def setConfig(connection,
     assert isinstance(date, datetime.date)
     # we want just one conf
     vals = (1, description, dateToSQLite(date), nJudges, nUsers, nTrials, 0, average, state, uuid)
-    connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", average, state, uuid) values(?,?,?,?,?,?,?,?,?, ?)', vals)
+    connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", average, state, uuid) values(?,?,?,?,?,?,?,?,?,?)', vals)
 
 
 def advanceToNextTrial(connection):
@@ -434,17 +491,32 @@ class Gara(QObject):
         with self.lock:
             return setState(connection, state)
 
+    def updateUserInfo(self, connection, payloads):
+        with self.lock:
+            for k, v in payloads.items():
+                updateUserInfo(connection, k, v)
+
+    def getUserInfo(self, connection, user):
+        with self.lock:
+            return getUserInfo(connection, user)
+
+
 if __name__ == '__main__':
     c = apsw.Connection(":memory:")
     if checkDBVersion(c) != USER_DB_VERSION:
         print("Creating")
         createTableV2(c)
         today = datetime.date.today()
-        setConfig(cur, "test", today, 6, 100, 3, "uuid")
+        setConfig(c, "test", today, 6, 100, 3, 0, 0, "uuid")
     print(getConfig(c))
     addVote(c, 0, 1, 1, 6.0)
     addVote(c, 0, 1, 2, 9.0)
-    addVote(c, 0, 1, 3, 9.0)
+    addVote(c, 0, 1, 1, 9.0)
+    updateUserInfo(c, 0, {0: 'nf', 1: 1.0, 2: 2.0})
+    #updateUserInfo(c, 1, {1: 0.4, 2: 0.01})
+    updateUserInfo(c, 0, {0: 'nf', 1: 1.0, 2: 2.0})
+    updateUserInfo(c, 0, {0: ''})
+    #updateUserInfo(c, 1, {1: 0.4, 2: 0.01})
     g = Gara()
     g.createDB()
     g.addRemoteVote(g.connection, trial=0, user=1, judge=4, vote=6.5)

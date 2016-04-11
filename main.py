@@ -232,10 +232,13 @@ class DlgConfigCredits (QDialog):
         self.ui.tableView.setAlternatingRowColors(True)
         self.ui.tableView.verticalHeader().setVisible(False)
 
-        for h in range(0, len(self.ui.tableView.horizontalHeader())):
+        self.changes = {}
+
+        for h in range(1, len(self.ui.tableView.horizontalHeader())):
             self.ui.tableView.horizontalHeader().setSectionResizeMode(h, QHeaderView.Stretch)
 
         for y in range(0, self.rows):
+            user = Gara.activeInstance.getUserInfo(self.connection, y)
             for x in range(0, self.cols):
                 item = QStandardItem("")
                 item.setSelectable(True)
@@ -249,10 +252,17 @@ class DlgConfigCredits (QDialog):
                     # item.setBackground(b)
                     item.setText(str(y))
                 if x == 1:
-                    item.setData({'check': 'str', 'user': y, 'col': x-2})
+                    item.setData({'check': 'str', 'user': y, 'col': x-1})
+                    if user:
+                        v = user['nickname']
+                        if v is not None:
+                            item.setText(v)
                 if x > 1:
-                    item.setData({'check': 'float', 'user': y, 'col': x-2})
-
+                    item.setData({'check': 'float', 'user': y, 'col': x-1})
+                    if user:
+                        v = user['credits'][x-2]
+                        if v is not None:
+                            item.setText(str(v))
 
         self.model.itemChanged.connect(self.itemChanged)
 
@@ -260,15 +270,22 @@ class DlgConfigCredits (QDialog):
     def itemChanged(self, item):
         data = item.data()
         if data is not None:
+            user = data['user']
+            col = data['col']
             if data['check'] == 'str':
-                item.setText(item.text().strip())
+                v = item.text().strip()
             if data['check'] == 'float':
                 try:
-                    item.setText(str(float(item.text())))
+                    v = float(item.text())
                 except ValueError:
-                    item.setText("")
+                    v = 0.0
+            item.setText(str(v))
+            g = self.changes.get(user, {})
+            g[col] = v
+            self.changes[user] = g
 
     def accept(self):
+        Gara.activeInstance.updateUserInfo(self.connection, self.changes)
         super().accept()
 
     def reject(self):
