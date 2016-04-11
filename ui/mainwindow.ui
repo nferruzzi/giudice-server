@@ -456,16 +456,17 @@ con crediti</string>
     <addaction name="separator"/>
     <addaction name="actionSaveAs"/>
     <addaction name="separator"/>
+    <addaction name="separator"/>
     <addaction name="actionGenera_rapporto"/>
    </widget>
-   <widget class="QMenu" name="menuImpostazioni">
+   <widget class="QMenu" name="menuGara">
     <property name="title">
      <string>Gara</string>
     </property>
-    <addaction name="actionConfigura"/>
+    <addaction name="actionPettorine"/>
    </widget>
    <addaction name="menuGare"/>
-   <addaction name="menuImpostazioni"/>
+   <addaction name="menuGara"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNuova_gara">
@@ -483,9 +484,12 @@ con crediti</string>
     <string>Crea una copia...</string>
    </property>
   </action>
-  <action name="actionConfigura">
+  <action name="actionPettorine">
    <property name="text">
-    <string>Configura pettorine...</string>
+    <string>Imposta crediti...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::TextHeuristicRole</enum>
    </property>
   </action>
   <action name="actionGenera_rapporto">
@@ -496,6 +500,22 @@ con crediti</string>
   <action name="actionSave">
    <property name="text">
     <string>Salva</string>
+   </property>
+  </action>
+  <action name="actionFai_cose">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Sviluppatori ...</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionConfigura_2">
+   <property name="text">
+    <string>Configura ...</string>
    </property>
   </action>
  </widget>

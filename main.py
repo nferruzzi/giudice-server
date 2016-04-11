@@ -203,6 +203,78 @@ class DlgNewGara (QDialog):
         super().reject()
 
 
+class DlgConfigCredits (QDialog):
+
+    def __init__(self, parent):
+        QDialog.__init__(self, parent)
+        self.ui = ui.Ui_DialogCredits()
+        self.ui.setupUi(self)
+        self.setModal(True)
+
+        self.connection = Gara.activeInstance.getConnection()
+        self.configuration = Gara.activeInstance.getConfiguration(self.connection)
+        self.rows = self.configuration['nUsers']+1
+        self.trials = self.configuration['nTrials']
+
+        labels = [
+            _translate("Credits", "Pettorina"),
+            _translate("Credits", "Nome e cognome")]
+        for i in range(0, self.trials):
+            labels.append(_translate("Credits", "Crediti\nProva {}".format(i+1)))
+
+        self.cols = len(labels)
+        self.model = QStandardItemModel(self.rows, self.cols)
+        self.model.setHorizontalHeaderLabels(labels)
+
+        self.ui.tableView.setModel(self.model)
+        self.ui.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.tableView.setSelectionMode(QAbstractItemView.NoSelection)
+        self.ui.tableView.setAlternatingRowColors(True)
+        self.ui.tableView.verticalHeader().setVisible(False)
+
+        for h in range(0, len(self.ui.tableView.horizontalHeader())):
+            self.ui.tableView.horizontalHeader().setSectionResizeMode(h, QHeaderView.Stretch)
+
+        for y in range(0, self.rows):
+            for x in range(0, self.cols):
+                item = QStandardItem("")
+                item.setSelectable(True)
+                self.model.setItem(y, x, item)
+                if x == 0:
+                    item.setEditable(False)
+                    g = item.font()
+                    g.setBold(True)
+                    item.setFont(g)
+                    # b = QBrush(QColor(200, 200, 200))
+                    # item.setBackground(b)
+                    item.setText(str(y))
+                if x == 1:
+                    item.setData({'check': 'str', 'user': y, 'col': x-2})
+                if x > 1:
+                    item.setData({'check': 'float', 'user': y, 'col': x-2})
+
+
+        self.model.itemChanged.connect(self.itemChanged)
+
+    @pyqtSlot(QStandardItem)
+    def itemChanged(self, item):
+        data = item.data()
+        if data is not None:
+            if data['check'] == 'str':
+                item.setText(item.text().strip())
+            if data['check'] == 'float':
+                try:
+                    item.setText(str(float(item.text())))
+                except ValueError:
+                    item.setText("")
+
+    def accept(self):
+        super().accept()
+
+    def reject(self):
+        super().reject()
+
+
 class GaraMainWindow (QMainWindow):
     def showNuovaGara(self):
         # todo check
@@ -573,6 +645,10 @@ class GaraMainWindow (QMainWindow):
             else:
                 table.hideRow(row)
 
+    def configuraPettorine(self):
+        dlg = DlgConfigCredits(self)
+        dlg.show()
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.tables = []
@@ -581,6 +657,7 @@ class GaraMainWindow (QMainWindow):
         self.ui.actionNuova_gara.triggered.connect(self.showNuovaGara)
         self.ui.actionSaveAs.triggered.connect(self.saveAs)
         self.ui.actionCarica.triggered.connect(self.open)
+        self.ui.actionPettorine.triggered.connect(self.configuraPettorine)
         self.showNuovaGara()
         self.statusLabel = QLabel(self.ui.statusbar)
         self.ui.statusbar.addPermanentWidget(self.statusLabel)
