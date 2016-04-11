@@ -255,6 +255,7 @@ def getUser(connection, user):
 
         if None in votes.values():
             score = None
+            score_bonus = None
         else:
             vt = votes.values()
             if average == Average_Aritmetica:
@@ -264,9 +265,10 @@ def getUser(connection, user):
             score = float("{:0.2f}".format(score))
             # each trial has its own bonus
             trial_credit = credits['credits'][t]
-            trials[t]['score_bonus'] = score + trial_credit
+            score_bonus = score + trial_credit
 
         trials[t]['score'] = score
+        trials[t]['score_bonus'] = score_bonus
 
     if len(trials) == nt:
         # we have all data needed to calc the results
