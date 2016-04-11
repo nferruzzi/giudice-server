@@ -1,3 +1,4 @@
 FORMS += \
     mainwindow.ui \
-    newgara.ui
+    newgara.ui \
+    credits.ui
