@@ -174,6 +174,14 @@ class DlgNewGara (QDialog):
         self.ui.radioButton.setChecked(True)
 
     def accept(self):
+        ng = int(self.ui.numeroGiudici.currentText())
+        if self.ui.radioButton_2.isChecked() and ng <= 3:
+            testo = _translate("MainWindow", "La media mediata richiede almeno 4 giudici")
+            dlg = QMessageBox.information(self, "Attenzione",
+                                          testo,
+                                          QMessageBox.Ok)
+            return
+
         average = Average_Aritmetica if self.ui.radioButton.isChecked() else Average_Mediata
 
         where = QStandardPaths.DocumentsLocation
@@ -189,7 +197,7 @@ class DlgNewGara (QDialog):
             if pn.exists():
                 pn.unlink()
             gara = Gara(description=self.ui.description.text(),
-                        nJudges=int(self.ui.numeroGiudici.currentText()),
+                        nJudges=int(ng),
                         date=self.ui.dateEdit.date(),
                         nTrials=int(self.ui.prove.currentText()),
                         nUsers=int(self.ui.atleti.text()),
@@ -493,7 +501,6 @@ class GaraMainWindow (QMainWindow):
             self.selected_trial = self.tables.index(table)
         self.selected_user = a.row()
 
-        print("Selected user: {} trial: {}".format(self.selected_user, self.selected_trial))
         user = Gara.activeInstance.getUser(self.connection, self.selected_user)
         configuration = Gara.activeInstance.getConfiguration(self.connection)
 
@@ -663,8 +670,16 @@ class GaraMainWindow (QMainWindow):
                 table.hideRow(row)
 
     def configuraPettorine(self):
-        dlg = DlgConfigCredits(self)
-        dlg.show()
+        configuration = Gara.activeInstance.getConfiguration(self.connection)
+        if configuration['state'] == State_Configure:
+            dlg = DlgConfigCredits(self)
+            dlg.show()
+        else:
+            dlg = QMessageBox.information(self,
+                                          _translate("MainWindow", "Attenzione"),
+                                          _translate("MainWindow", "A gara avviata non e' possibile modificare i bonus."),
+                                          QMessageBox.Ok)
+
 
     def __init__(self):
         QMainWindow.__init__(self)
