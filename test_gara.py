@@ -18,7 +18,7 @@ class GaraBaseTest(unittest.TestCase):
         pass
 
 
-class BasicFunctionaly(GaraBaseTest):
+class BasicFunctionality(GaraBaseTest):
 
     def setUp(self):
         self.gara = Gara(nJudges=1, nTrials=1, nUsers=1, average=Average_Aritmetica)
@@ -61,6 +61,9 @@ class BasicFunctionaly(GaraBaseTest):
         self.assertEqual(v[0], 403)
         # judge not accepted max
         v = self.gara.addRemoteVote(self.connection, trial=0, user=1, judge=2, user_uuid="abc", vote=6.5)
+        self.assertEqual(v[0], 403)
+        # judge fake
+        v = self.gara.addRemoteVote(self.connection, trial=0, user=1, judge=1, user_uuid="zzz", vote=6.5)
         self.assertEqual(v[0], 403)
 
 if __name__ == '__main__':
