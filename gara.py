@@ -76,11 +76,16 @@ def getUserInfo(connection, user):
     query = 'select * from credits where user=?'
     for v in connection.cursor().execute(query, (user,)):
         vals = v[1:11]
+        vals = list(map(lambda x: 0.0 if x is None else x, vals))
         return {
             'nickname': v[11],
             'credits': vals
         }
-    return None
+    return {
+        'nickname': '',
+        'credits': [0.0, ]*10
+    }
+
 
 def updateUserInfo(connection, user, payload):
     print("Payloads:", payload)
@@ -224,8 +229,13 @@ def getUser(connection, user):
     response = {}
     trials = {}
 
+    # get credits, they are used one by one or all together
+    credits = getUserInfo(connection, user)
+    sum_credits = sum(credits['credits'])
+
     for vals in connection.cursor().execute(query, (user,)):
         t = vals[0]
+        # judge votes are stored from 1:..
         vt = vals[1:]
         votes = {
             1: vt[0],
@@ -236,6 +246,7 @@ def getUser(connection, user):
             6: vt[5],
         }
 
+        # we remove votes not needed so we can test for None properly
         for i in range(nj+1, MAX_JUDGES+1):
             del votes[i]
 
@@ -246,22 +257,32 @@ def getUser(connection, user):
             if average == Average_Aritmetica:
                 score = sum(vt) / len(vt)
             else:
-                score = (sum(vt) - (min(vt) - max(vt))) / (len(vt)-2)
+                score = (sum(vt) - min(vt) - max(vt)) / (len(vt)-2)
             score = float("{:0.2f}".format(score))
 
         trials[t] = {}
         trials[t]['votes'] = votes
         trials[t]['score'] = score
 
+        # each trial has its own bonus
+        trial_credit = credits['credits'][t]
+        trials[t]['score_bonus'] = score + trial_credit
+
     if len(trials) == nt:
         # we have all data needed to calc the results
         finals = list(map(lambda x: x['score'], trials.values()))
+        finals_average = list(map(lambda x: x['score_bonus'], trials.values()))
+
         if None not in finals:
+            # average
             average = sum(finals) / len(finals)
+            # average with bonus
+            average_bonus = sum(finals_average) / len(finals_average)
+
             results = {}
             results['average'] = float("{:0.2f}".format(average))
-            results['average_bonus'] = float("{:0.2f}".format(average)) # + bonus
-            results['sum'] = float("{:0.2f}".format(sum(finals))) # + bonus
+            results['average_bonus'] = float("{:0.2f}".format(average_bonus))
+            results['sum'] = float("{:0.2f}".format(sum(finals_average)))
             response['results'] = results
     else:
         # fill with dummy data
@@ -273,17 +294,22 @@ def getUser(connection, user):
                 trials[k] = {}
                 trials[k]['votes'] = votes
                 trials[k]['score'] = None
-    # we need them ordered to create progessive averages
-    all_score = []
-    for i in range(0, len(trials)):
-        score = trials[i].get('score')
-        if score is None:
-            break
-        all_score.append(score)
-        avg = sum(all_score) / len(all_score)
-        trials[i]['average'] = float("{:0.2f}".format(avg))
 
+    # we need them ordered to create progessive averages
+    def calcProgressive(key, store):
+        all_score = []
+        for i in range(0, len(trials)):
+            score = trials[i].get(key)
+            if score is None:
+                break
+            all_score.append(score)
+            avg = sum(all_score) / len(all_score)
+            trials[i][store] = float("{:0.2f}".format(avg))
+
+    calcProgressive('score', 'average')
+    calcProgressive('score_bonus', 'average_bonus')
     response['trials'] = trials
+
     return response
 
 
