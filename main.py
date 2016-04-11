@@ -116,8 +116,8 @@ def keepAlive(judge, connection=None, gara=None):
 
 @webapp.post("/vote")
 def vote(connection, gara):
-    ua = request.headers.get('X-User-Auth')
-    if ua is None:
+    uuid = request.headers.get('X-User-Auth')
+    if uuid is None:
         abort(401, {'error': 'no token'})
 
     trial = int(request.json['trial'])
@@ -125,30 +125,11 @@ def vote(connection, gara):
     user = int(request.json['user'])
     vote = float(request.json['vote'])
 
-    configuration = gara.getConfiguration(connection)
+    code, body = gara.addRemoteVote(connection, trial, user, judge, uuid, vote)
+    if code != 200:
+        abort(code, body)
 
-    if configuration['state'] != State_Running:
-        abort(500, {'error': 'gara not configured yet'})
-
-    print("Add vote: ", trial, judge, user, vote)
-
-    if trial != configuration['currentTrial']:
-        abort(403, {'code': 1, 'error': 'Trial not accepted'})
-
-    if not (0 <= user <= configuration['nUsers']):
-        abort(403, {'code': 2, 'error': 'User not valid'})
-
-    if not (0 <= vote <= 100.00):
-        abort(403, {'code': 3, 'error': 'Vote not valid'})
-
-    if not gara.validJudge(judge, ua):
-        abort(403, {'code': 4, 'error': 'Judge not maching registered uuid'})
-
-    response = gara.addRemoteVote(connection, trial, user, judge, vote)
-    if response.get('error'):
-        abort(403, response)
-
-    return response
+    return body
 
 
 class Controller (object):
@@ -705,12 +686,11 @@ class GaraMainWindow (QMainWindow):
         timer.start(1000)
 
 if __name__ == '__main__':
-    debug = True
-    if debug:
-        # empty Gara
-        # gara = Gara(nJudges=2, nUsers=2, nTrials=2)
-        # gara.createDB()
-        gara = Gara.fromFilename("/Users/nferruzzi/Documents/semplice.gara")
+    import sys
+
+    gara = None
+    if len(sys.argv) == 2:
+        gara = Gara.fromFilename(sys.argv[1])
         Gara.setActiveInstance(gara)
         resetToTrial(gara.getConnection(), 0)
         setState(gara.getConnection(), State_Configure)
@@ -725,7 +705,7 @@ if __name__ == '__main__':
     # main ui
     app = QApplication(sys.argv)
     MainWindow = GaraMainWindow()
-    if debug:
+    if gara:
         MainWindow.setGara(gara)
     MainWindow.show()
     v = app.exec_()

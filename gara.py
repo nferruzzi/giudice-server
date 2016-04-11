@@ -250,6 +250,9 @@ def getUser(connection, user):
         for i in range(nj+1, MAX_JUDGES+1):
             del votes[i]
 
+        trials[t] = {}
+        trials[t]['votes'] = votes
+
         if None in votes.values():
             score = None
         else:
@@ -259,14 +262,11 @@ def getUser(connection, user):
             else:
                 score = (sum(vt) - min(vt) - max(vt)) / (len(vt)-2)
             score = float("{:0.2f}".format(score))
+            # each trial has its own bonus
+            trial_credit = credits['credits'][t]
+            trials[t]['score_bonus'] = score + trial_credit
 
-        trials[t] = {}
-        trials[t]['votes'] = votes
         trials[t]['score'] = score
-
-        # each trial has its own bonus
-        trial_credit = credits['credits'][t]
-        trials[t]['score_bonus'] = score + trial_credit
 
     if len(trials) == nt:
         # we have all data needed to calc the results
@@ -469,8 +469,26 @@ class Gara(QObject):
                 return False
             return v == uuid
 
-    def addRemoteVote(self, connection, trial, user, judge, vote):
+    def addRemoteVote(self, connection, trial, user, judge, user_uuid, vote):
         with self.lock:
+            configuration = self.getConfiguration(connection)
+
+            if configuration['state'] != State_Running:
+                return (500, {'code': 0, 'error': 'gara not configured yet'})
+
+            if trial != configuration['currentTrial']:
+                return (403, {'code': 1, 'error': 'Trial not accepted'})
+
+            if not (0 <= user <= configuration['nUsers']):
+                return (403, {'code': 2, 'error': 'User not valid'})
+
+            if not (0 <= vote <= 100.00):
+                return (403, {'code': 3, 'error': 'Vote not valid'})
+
+            if not self.validJudge(judge, user_uuid):
+                return (403, {'code': 4, 'error': 'Judge not maching registered uuid'})
+
+            print("Add vote: ", trial, judge, user, vote)
             v = addVote(connection,
                         trial=trial,
                         user=user,
@@ -478,8 +496,9 @@ class Gara(QObject):
                         vote=vote)
             if v:
                 self.vote_updated.emit(trial, user, judge, vote)
-                return {}
-            return {'code': 5, 'error': 'duplicate'}
+                return (200, {})
+
+            return (403, {'code': 5, 'error': 'duplicate'})
 
     def save(self, connection, filename):
         self.properName = filename
