@@ -20,6 +20,10 @@ MAX_TRIALS = 10
 Average_Aritmetica = 0
 Average_Mediata = 1
 
+State_Configure = 0
+State_Running = 1
+State_Completed = 2
+
 
 def createTableV2(connection):
     cmd = """CREATE TABLE users (
@@ -44,10 +48,11 @@ date DATE,
 "nTrials" INTEGER,
 "currentTrial" INTEGER,
 "average" INTEGER,
-uuid VARCHAR(250),
+"state" INTEGER,
+"uuid" VARCHAR(250),
 PRIMARY KEY (id)
 );
-CREATE TABLE bonus (
+CREATE TABLE credits (
 user INTEGER NOT NULL,
 trial1 FLOAT,
 trial2 FLOAT,
@@ -59,6 +64,7 @@ trial7 FLOAT,
 trial8 FLOAT,
 trial9 FLOAT,
 trial10 FLOAT,
+nickname VARCHAR(250),
 PRIMARY KEY (user)
 );
 PRAGMA user_version={};
@@ -85,11 +91,11 @@ def dateFromSQLite(column):
 
 
 def setConfig(connection,
-              description, date, nJudges, nUsers, nTrials, average, uuid):
+              description, date, nJudges, nUsers, nTrials, average, state, uuid):
     assert isinstance(date, datetime.date)
     # we want just one conf
-    vals = (1, description, dateToSQLite(date), nJudges, nUsers, nTrials, 0, average, uuid)
-    connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", average, uuid) values(?,?,?,?,?,?,?,?,?)', vals)
+    vals = (1, description, dateToSQLite(date), nJudges, nUsers, nTrials, 0, average, state, uuid)
+    connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", average, state, uuid) values(?,?,?,?,?,?,?,?,?, ?)', vals)
 
 
 def advanceToNextTrial(connection):
@@ -107,6 +113,11 @@ def resetToTrial(connection, trial=0):
     connection.cursor().execute(query, (trial,))
 
 
+def setState(connection, state=State_Configure):
+    query = 'update config set "state"=? where id=1'
+    connection.cursor().execute(query, (state,))
+
+
 def getConfig(connection):
     query = "select * from config limit 1"
     for v in connection.cursor().execute(query):
@@ -118,6 +129,7 @@ def getConfig(connection):
             'nTrials': v[5],
             'currentTrial': v[6],
             'average': v[7],
+            'state': v[8],
             'uuid': v[8],
         }
     return None
@@ -318,6 +330,7 @@ class Gara(QObject):
                           nUsers=self._nUsers,
                           nTrials=self._nTrials,
                           average=self._average,
+                          state=State_Configure,
                           uuid=self._uuid)
                 self._created = True
 
@@ -417,8 +430,12 @@ class Gara(QObject):
         with self.lock:
             return advanceToNextTrial(connection)
 
+    def setState(self, connection, state=State_Configure):
+        with self.lock:
+            return setState(connection, state)
+
 if __name__ == '__main__':
-    c = apsw.Connection("pippo.db")
+    c = apsw.Connection(":memory:")
     if checkDBVersion(c) != USER_DB_VERSION:
         print("Creating")
         createTableV2(c)

@@ -89,6 +89,13 @@ border-color: rgb(0, 0, 0);</string>
        </spacer>
       </item>
       <item>
+       <widget class="QPushButton" name="startButton">
+        <property name="text">
+         <string>Avvia gara!</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="endButton">
         <property name="text">
          <string>Fine gara!</string>
@@ -453,7 +460,7 @@ con crediti</string>
    </widget>
    <widget class="QMenu" name="menuImpostazioni">
     <property name="title">
-     <string>Impostazioni</string>
+     <string>Gara</string>
     </property>
     <addaction name="actionConfigura"/>
    </widget>
@@ -478,7 +485,7 @@ con crediti</string>
   </action>
   <action name="actionConfigura">
    <property name="text">
-    <string>Bonus atleti...</string>
+    <string>Configura pettorine...</string>
    </property>
   </action>
   <action name="actionGenera_rapporto">

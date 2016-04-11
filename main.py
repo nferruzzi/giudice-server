@@ -91,6 +91,9 @@ def keepAlive(judge, connection=None, gara=None):
     judge = int(judge)
     configuration = Gara.activeInstance.getConfiguration(connection)
 
+    if configuration['state'] != State_Running:
+        abort(500, {'error': 'gara not configured yet'})
+
     response = gara.getState(connection)
     response['version'] = VERSION
 
@@ -122,8 +125,12 @@ def vote(connection, gara):
     user = int(request.json['user'])
     vote = float(request.json['vote'])
 
-    print("Add vote: ", trial, judge, user, vote)
     configuration = gara.getConfiguration(connection)
+
+    if configuration['state'] != State_Running:
+        abort(500, {'error': 'gara not configured yet'})
+
+    print("Add vote: ", trial, judge, user, vote)
 
     if trial != configuration['currentTrial']:
         abort(403, {'code': 1, 'error': 'Trial not accepted'})
@@ -225,7 +232,7 @@ class GaraMainWindow (QMainWindow):
     @pyqtSlot()
     def updateUI(self):
         gara = Gara.activeInstance
-        mainbuttons = [self.ui.nextTrialButton, self.ui.endButton]
+        mainbuttons = [self.ui.nextTrialButton, self.ui.endButton, self.ui.startButton]
 
         for btn in mainbuttons:
             btn.setEnabled(gara is not None)
@@ -242,6 +249,8 @@ class GaraMainWindow (QMainWindow):
         self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - {} (autosalvataggio)".format(gara.filename)))
         self.ui.description.setText(configuration['description'])
         self.ui.nextTrialButton.setEnabled(trial+1 < nt)
+        self.ui.startButton.setEnabled(configuration['state'] == State_Configure)
+        self.ui.endButton.setEnabled(configuration['state'] == State_Running)
 
         medie = {
             Average_Aritmetica: _translate("MainWindow", "aritmetica"),
@@ -512,6 +521,19 @@ class GaraMainWindow (QMainWindow):
     def tabbarChanged(self, index):
         self.deselect()
 
+    @pyqtSlot()
+    def start(self):
+        dlg = QMessageBox.information(self,
+                                      _translate("MainWindow", "Attenzione"),
+                                      _translate("MainWindow", "Avviando la gara non sara' piu' possibile impostare i crediti. Proseguire ?"),
+                                      QMessageBox.Yes | QMessageBox.No)
+        if dlg == QMessageBox.Yes:
+            Gara.activeInstance.setState(self.connection, State_Running)
+
+    @pyqtSlot()
+    def end(self):
+        pass
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.tables = []
@@ -527,6 +549,8 @@ class GaraMainWindow (QMainWindow):
         self.ui.retryTrial.released.connect(self.retryTrial)
         self.ui.nextTrialButton.released.connect(self.nextTrial)
         self.ui.tabWidget.currentChanged.connect(self.tabbarChanged)
+        self.ui.startButton.released.connect(self.start)
+        self.ui.endButton.released.connect(self.end)
 
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
@@ -541,6 +565,7 @@ if __name__ == '__main__':
         gara = Gara.fromFilename("/Users/nferruzzi/Documents/semplice.gara")
         Gara.setActiveInstance(gara)
         resetToTrial(gara.getConnection(), 0)
+        setState(gara.getConnection(), State_Configure)
         assert gara == Gara.activeInstance, "not set"
         assert gara.connection, "connection not set"
 
