@@ -101,16 +101,10 @@ def keepAlive(judge, connection=None, gara=None):
     if ua is None:
         abort(401, {'error': 'no token'})
 
-    if judge <= 0 or judge > configuration['nJudges']:
-        # should be 409 but QML XHTTPXmlRequest.status is bugged on android and
-        # return 0
-        abort(404, {
-            'error': 'judge not in range',
-            'max': configuration['nJudges']})
+    code, err = gara.registerJudgeWithUUID(connection, judge, ua)
+    if code != 200:
+        abort(code, err)
 
-    conflict = gara.registerJudgeWithUUID(judge, ua)
-    if conflict:
-        abort(403, {'error': 'judge in use'})
     return response
 
 
@@ -692,8 +686,8 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         gara = Gara.fromFilename(sys.argv[1])
         Gara.setActiveInstance(gara)
-        resetToTrial(gara.getConnection(), 0)
-        setState(gara.getConnection(), State_Configure)
+        #resetToTrial(gara.getConnection(), 0)
+        #setState(gara.getConnection(), State_Configure)
         assert gara == Gara.activeInstance, "not set"
         assert gara.connection, "connection not set"
 

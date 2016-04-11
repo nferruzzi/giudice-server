@@ -434,8 +434,17 @@ class Gara(QObject):
             }
             return state
 
-    def registerJudgeWithUUID(self, judge, uuid):
+    def registerJudgeWithUUID(self, connection, judge, uuid):
         with self.lock:
+            configuration = self.getConfiguration(connection)
+            if judge <= 0 or judge > configuration['nJudges']:
+                # should be 409 but QML XHTTPXmlRequest.status is bugged on
+                # android and return 0
+                return (404, {
+                    'error': 'judge not in range',
+                    'max': configuration['nJudges']
+                })
+
             if self.DONOT_ALLOW_DUPLICATE_JUDGES:
                 # remove any judge with the same uuid
                 for k, v in list(self.usersUUID.items()):
@@ -460,7 +469,9 @@ class Gara(QObject):
                 self.usersUUID[judge] = uuid
 
             self.usersTIME[uuid] = time.time()
-            return present != uuid
+            if present != uuid:
+                return (403, {'error': 'judge in use'})
+            return (200, {})
 
     def validJudge(self, judge, uuid):
         with self.lock:
