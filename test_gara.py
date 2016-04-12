@@ -17,6 +17,10 @@ class GaraBaseTest(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def assertFEqual(self, a, b, precision=1E-10):
+        v = abs(a-b)
+        self.assertTrue(v < precision, "{} > {}".format(abs(a-b),precision))
+
     def registerUsers(self, n):
         for x in range(1, n+1):
             self.gara.registerJudgeWithUUID(self.connection, x, str(x)*3)
@@ -165,7 +169,7 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
     def test_addvote_single(self):
         self.addVote(judge=1, user=1, vote=6.5)
         u = self.gara.getUser(self.connection, user=1)
-        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
         self.assertEqual(u['trials'][0]['score'], None)
         self.assertEqual(u['trials'][0]['score_bonus'], None)
 
@@ -177,9 +181,9 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
         self.addVote(judge=5, user=1, vote=6.5)
         self.addVote(judge=6, user=1, vote=6.5)
         u = self.gara.getUser(self.connection, user=1)
-        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
-        self.assertEqual(u['trials'][0]['score'], 6.5)
-        self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
+        self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertFEqual(u['trials'][0]['score'], 6.5)
+        self.assertFEqual(u['trials'][0]['score_bonus'], 6.5)
 
 
 class BasicFunctionalityWithQueryCheck(GaraBaseTest):
@@ -198,7 +202,7 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
     def test_addvote_single(self):
         self.addVote(judge=1, user=1, vote=6.5)
         u = self.gara.getUser(self.connection, user=1)
-        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
         self.assertEqual(u['trials'][0]['score'], None)
         self.assertEqual(u['trials'][0]['score_bonus'], None)
         self.assertEqual(u['trials'][1]['votes'][1], None)
@@ -209,9 +213,9 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
         for x in range(0, 6):
             self.addVote(judge=x+1, user=1, vote=6.5)
         u = self.gara.getUser(self.connection, user=1)
-        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
-        self.assertEqual(u['trials'][0]['score'], 6.5)
-        self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
+        self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertFEqual(u['trials'][0]['score'], 6.5)
+        self.assertFEqual(u['trials'][0]['score_bonus'], 6.5)
         self.assertEqual(u.get('results'), None)
 
 
@@ -231,7 +235,7 @@ class BasicFunctionalityWithQueryCheckCompleteGara(GaraBaseTest):
     def test_addvote_single(self):
         self.addVote(judge=1, user=1, vote=6.5)
         u = self.gara.getUser(self.connection, user=1)
-        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
         self.assertEqual(u['trials'][0]['score'], None)
         self.assertEqual(u['trials'][0]['score_bonus'], None)
 
@@ -239,12 +243,12 @@ class BasicFunctionalityWithQueryCheckCompleteGara(GaraBaseTest):
         for x in range(0, 6):
             self.addVote(judge=x+1, user=1, vote=6.5)
         u = self.gara.getUser(self.connection, user=1)
-        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
-        self.assertEqual(u['trials'][0]['score'], 6.5)
-        self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
-        self.assertEqual(u['results']['average'], 6.5)
-        self.assertEqual(u['results']['average_bonus'], 6.5)
-        self.assertEqual(u['results']['sum'], 6.5)
+        self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertFEqual(u['trials'][0]['score'], 6.5)
+        self.assertFEqual(u['trials'][0]['score_bonus'], 6.5)
+        self.assertFEqual(u['results']['average'], 6.5)
+        self.assertFEqual(u['results']['average_bonus'], 6.5)
+        self.assertFEqual(u['results']['sum'], 6.5)
 
 
 class BasicFunctionalityWithQueryCheckAverageAritmetica(GaraBaseTest):
@@ -271,8 +275,8 @@ class BasicFunctionalityWithQueryCheckAverageAritmetica(GaraBaseTest):
         for x in range(0, 6):
             self.addVote(judge=x+1, user=1, vote=0.25+x)
         u = self.gara.getUser(self.connection, user=1)
-        self.assertEqual(u['trials'][0]['score'], (0.25+1.25+2.25+3.25+4.25+5.25)/6.0)
-        self.assertEqual(u['trials'][0]['score_bonus'], (0.25+1.25+2.25+3.25+4.25+5.25)/6.0)
+        self.assertFEqual(u['trials'][0]['score'], (0.25+1.25+2.25+3.25+4.25+5.25)/6.0)
+        self.assertFEqual(u['trials'][0]['score_bonus'], (0.25+1.25+2.25+3.25+4.25+5.25)/6.0)
 
     def createAndTestVotesAritmetica(self, a, b):
         for x in range(0, 6):
@@ -281,15 +285,15 @@ class BasicFunctionalityWithQueryCheckAverageAritmetica(GaraBaseTest):
         for x in range(0, 6):
             self.addVote(trial=1, judge=x+1, user=1, vote=b)
         u = self.gara.getUser(self.connection, user=1)
-        self.assertEqual(u['trials'][0]['score'], a)
-        self.assertEqual(u['trials'][0]['score_bonus'], a)
-        self.assertEqual(u['trials'][0]['average'], a)
-        self.assertEqual(u['trials'][1]['score'], b)
-        self.assertEqual(u['trials'][1]['score_bonus'], b)
-        self.assertEqual(u['trials'][1]['average'], (a+b)/2.0)
-        self.assertEqual(u['results']['average'], (a+b)/2.0)
-        self.assertEqual(u['results']['average_bonus'], (a+b)/2.0)
-        self.assertEqual(u['results']['sum'], a+b)
+        self.assertFEqual(u['trials'][0]['score'], a)
+        self.assertFEqual(u['trials'][0]['score_bonus'], a)
+        self.assertFEqual(u['trials'][0]['average'], a)
+        self.assertFEqual(u['trials'][1]['score'], b)
+        self.assertFEqual(u['trials'][1]['score_bonus'], b)
+        self.assertFEqual(u['trials'][1]['average'], (a+b)/2.0)
+        self.assertFEqual(u['results']['average'], (a+b)/2.0)
+        self.assertFEqual(u['results']['average_bonus'], (a+b)/2.0)
+        self.assertFEqual(u['results']['sum'], a+b)
 
     def test_addvote_checkscore_complete_1(self):
         self.createAndTestVotesAritmetica(5, 8)
@@ -305,6 +309,74 @@ class BasicFunctionalityWithQueryCheckAverageAritmetica(GaraBaseTest):
 
     def test_addvote_checkscore_complete_5(self):
         self.createAndTestVotesAritmetica(3.2543, 4.7525)
+
+
+class BasicFunctionalityWithQueryCheckAverageMediata(GaraBaseTest):
+
+    def setUp(self):
+        self.gara = Gara(nJudges=6, nTrials=2, nUsers=10, average=Average_Mediata)
+        self.gara.createDB()
+        self.connection = self.gara.connection
+        self.gara.setState(self.connection, State_Running)
+        self.registerUsers(6)
+
+    def tearDown(self):
+        self.connection = None
+        self.gara = None
+
+    def test_addvote_checkscore(self):
+        votes = [1, 5, 6, 7, 8, 100]
+        for x in range(0, 6):
+            self.addVote(judge=x+1, user=1, vote=votes[x])
+        u = self.gara.getUser(self.connection, user=1)
+        votes.remove(min(votes))
+        votes.remove(max(votes))
+        self.assertFEqual(u['trials'][0]['score'], sum(votes)/len(votes))
+        self.assertFEqual(u['trials'][0]['score_bonus'], sum(votes)/len(votes))
+
+    def createAndTestVotesMediata(self, a, b):
+        votes_a = [a, a*a, a*0.3, a*2, a*a*2, a*3]
+        votes_b = [b, b*b, b*0.3, a*2, a*a*2, a*3]
+
+        for x in range(0, 6):
+            self.addVote(trial=0, judge=x+1, user=1, vote=votes_a[x])
+        self.gara.advanceToNextTrial(self.connection)
+        for x in range(0, 6):
+            self.addVote(trial=1, judge=x+1, user=1, vote=votes_b[x])
+        u = self.gara.getUser(self.connection, user=1)
+
+        votes_a.remove(min(votes_a))
+        votes_a.remove(max(votes_a))
+        votes_b.remove(min(votes_b))
+        votes_b.remove(max(votes_b))
+        ma = sum(votes_a)/len(votes_a)
+        mb = sum(votes_b)/len(votes_b)
+
+        self.assertFEqual(u['trials'][0]['score'], ma)
+        self.assertFEqual(u['trials'][0]['score_bonus'], ma)
+        self.assertFEqual(u['trials'][0]['average'], ma)
+        self.assertFEqual(u['trials'][1]['score'], mb)
+        self.assertFEqual(u['trials'][1]['score_bonus'], mb)
+        self.assertFEqual(u['trials'][1]['average'], (ma+mb)/2.0)
+        self.assertFEqual(u['results']['average'], (ma+mb)/2.0)
+        self.assertFEqual(u['results']['average_bonus'], (ma+mb)/2.0)
+        self.assertFEqual(u['results']['sum'], ma+mb)
+
+    def test_addvote_checkscore_complete_1(self):
+        self.createAndTestVotesMediata(5, 8)
+
+    def test_addvote_checkscore_complete_2(self):
+        self.createAndTestVotesMediata(1, 10)
+
+    def test_addvote_checkscore_complete_3(self):
+        self.createAndTestVotesMediata(0.5, 5.75)
+
+    def test_addvote_checkscore_complete_4(self):
+        self.createAndTestVotesMediata(3.25, 4.75)
+
+    def test_addvote_checkscore_complete_5(self):
+        self.createAndTestVotesMediata(3.2543, 4.7525)
+
 
 if __name__ == '__main__':
     unittest.main()
