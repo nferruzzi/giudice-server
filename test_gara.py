@@ -433,5 +433,41 @@ class BasicFunctionalityWithSimpleCredits(GaraBaseTest):
         self.assertFEqual(u['results']['average_bonus'], (5+bonus_1+6+bonus_2+7+bonus_3)/3.0)
         self.assertFEqual(u['results']['sum'], (5+bonus_1+6+bonus_2+7+bonus_3))
 
+
+class BasicFunctionalityWithCreditsInsertion(GaraBaseTest):
+
+    def setUp(self):
+        self.gara = Gara(nJudges=6, nTrials=3, nUsers=10, average=Average_Aritmetica)
+        self.gara.createDB()
+        self.connection = self.gara.connection
+        self.gara.setState(self.connection, State_Running)
+        self.registerUsers(6)
+
+    def tearDown(self):
+        self.connection = None
+        self.gara = None
+
+    def test_addvote_checkscore(self):
+        u = self.gara.getUserInfo(self.connection, 1)
+        self.assertEqual(u['nickname'], '')
+        for x in range(0, MAX_TRIALS):
+            self.assertFEqual(u['credits'][x], 0.0)
+        self.gara.updateUserInfo(self.connection, {1: {-1:'test', 0: 1, 4: 2, 8: 3}})
+        u = self.gara.getUserInfo(self.connection, 1)
+        self.assertEqual(u['nickname'], 'test')
+        self.assertFEqual(u['credits'][0], 1.0)
+        self.assertFEqual(u['credits'][4], 2.0)
+        self.assertFEqual(u['credits'][8], 3.0)
+        self.gara.updateUserInfo(self.connection, {1: {0: 0}})
+        u = self.gara.getUserInfo(self.connection, 1)
+        self.assertFEqual(u['credits'][0], 0.0)
+        self.gara.updateUserInfo(self.connection, {2: {0: 0}})
+        u = self.gara.getUserInfo(self.connection, 2)
+        self.assertFEqual(u['credits'][0], 0.0)
+        self.gara.updateUserInfo(self.connection, {2: {0: 1, -1: 'test'}})
+        u = self.gara.getUserInfo(self.connection, 2)
+        self.assertFEqual(u['credits'][0], 1.0)
+        self.assertEqual(u['nickname'], 'test')
+
 if __name__ == '__main__':
     unittest.main()
