@@ -314,7 +314,7 @@ class BasicFunctionalityWithQueryCheckAverageAritmetica(GaraBaseTest):
 class BasicFunctionalityWithQueryCheckAverageMediata(GaraBaseTest):
 
     def setUp(self):
-        self.gara = Gara(nJudges=6, nTrials=2, nUsers=10, average=Average_Mediata)
+        self.gara = Gara(nJudges=6, nTrials=3, nUsers=10, average=Average_Mediata)
         self.gara.createDB()
         self.connection = self.gara.connection
         self.gara.setState(self.connection, State_Running)
@@ -334,23 +334,31 @@ class BasicFunctionalityWithQueryCheckAverageMediata(GaraBaseTest):
         self.assertFEqual(u['trials'][0]['score'], sum(votes)/len(votes))
         self.assertFEqual(u['trials'][0]['score_bonus'], sum(votes)/len(votes))
 
-    def createAndTestVotesMediata(self, a, b):
-        votes_a = [a, a*a, a*0.3, a*2, a*a*2, a*3]
-        votes_b = [b, b*b, b*0.3, a*2, a*a*2, a*3]
-
+    def createAndTestVotesMediata(self, a, b, c):
+        votes_a = [a, a*a, a*0.3, a*2, a*a*0.8, a*3]
+        votes_b = [b, b*b, b*0.3, a*2, a*a*0.8, a*3]
+        votes_c = [c, c*c, c*0.3, c*2, c*c*0.8, c*3]
         for x in range(0, 6):
             self.addVote(trial=0, judge=x+1, user=1, vote=votes_a[x])
         self.gara.advanceToNextTrial(self.connection)
+
         for x in range(0, 6):
             self.addVote(trial=1, judge=x+1, user=1, vote=votes_b[x])
+        self.gara.advanceToNextTrial(self.connection)
+
+        for x in range(0, 6):
+            self.addVote(trial=2, judge=x+1, user=1, vote=votes_c[x])
         u = self.gara.getUser(self.connection, user=1)
 
         votes_a.remove(min(votes_a))
         votes_a.remove(max(votes_a))
         votes_b.remove(min(votes_b))
         votes_b.remove(max(votes_b))
+        votes_c.remove(min(votes_c))
+        votes_c.remove(max(votes_c))
         ma = sum(votes_a)/len(votes_a)
         mb = sum(votes_b)/len(votes_b)
+        mc = sum(votes_c)/len(votes_c)
 
         self.assertFEqual(u['trials'][0]['score'], ma)
         self.assertFEqual(u['trials'][0]['score_bonus'], ma)
@@ -358,24 +366,27 @@ class BasicFunctionalityWithQueryCheckAverageMediata(GaraBaseTest):
         self.assertFEqual(u['trials'][1]['score'], mb)
         self.assertFEqual(u['trials'][1]['score_bonus'], mb)
         self.assertFEqual(u['trials'][1]['average'], (ma+mb)/2.0)
-        self.assertFEqual(u['results']['average'], (ma+mb)/2.0)
-        self.assertFEqual(u['results']['average_bonus'], (ma+mb)/2.0)
-        self.assertFEqual(u['results']['sum'], ma+mb)
+        self.assertFEqual(u['trials'][2]['score'], mc)
+        self.assertFEqual(u['trials'][2]['score_bonus'], mc)
+        self.assertFEqual(u['trials'][2]['average'], (ma+mb+mc)/3.0)
+        self.assertFEqual(u['results']['average'], (ma+mb+mc)/3.0)
+        self.assertFEqual(u['results']['average_bonus'], (ma+mb+mc)/3.0)
+        self.assertFEqual(u['results']['sum'], ma+mb+mc)
 
     def test_addvote_checkscore_complete_1(self):
-        self.createAndTestVotesMediata(5, 8)
+        self.createAndTestVotesMediata(5, 8, 9)
 
     def test_addvote_checkscore_complete_2(self):
-        self.createAndTestVotesMediata(1, 10)
+        self.createAndTestVotesMediata(1, 10, 2)
 
     def test_addvote_checkscore_complete_3(self):
-        self.createAndTestVotesMediata(0.5, 5.75)
+        self.createAndTestVotesMediata(0.5, 5.75, 6.63)
 
     def test_addvote_checkscore_complete_4(self):
-        self.createAndTestVotesMediata(3.25, 4.75)
+        self.createAndTestVotesMediata(3.25, 4.75, 5.12)
 
     def test_addvote_checkscore_complete_5(self):
-        self.createAndTestVotesMediata(3.2543, 4.7525)
+        self.createAndTestVotesMediata(3.2543, 4.7525, 5.3432)
 
 
 if __name__ == '__main__':
