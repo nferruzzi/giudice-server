@@ -202,6 +202,11 @@ class DlgConfigCredits (QDialog):
         self.configuration = Gara.activeInstance.getConfiguration(self.connection)
         self.rows = self.configuration['nUsers']+1
         self.trials = self.configuration['nTrials']
+        self.read_only = self.configuration['state'] != State_Configure
+
+        if self.read_only:
+            self.ui.buttonBox.clear()
+            self.ui.buttonBox.addButton(QDialogButtonBox.Ok)
 
         labels = [
             _translate("Credits", "Pettorina"),
@@ -230,6 +235,8 @@ class DlgConfigCredits (QDialog):
                 item = QStandardItem("")
                 item.setSelectable(True)
                 self.model.setItem(y, x, item)
+                if self.read_only:
+                    item.setEditable(False)
                 if x == 0:
                     item.setEditable(False)
                     g = item.font()
@@ -275,7 +282,8 @@ class DlgConfigCredits (QDialog):
             self.changes[user] = g
 
     def accept(self):
-        Gara.activeInstance.updateUserInfo(self.connection, self.changes)
+        if not self.read_only:
+            Gara.activeInstance.updateUserInfo(self.connection, self.changes)
         super().accept()
 
     def reject(self):
@@ -298,6 +306,10 @@ class GaraMainWindow (QMainWindow):
         print("UI connection:", self.connection)
         self.updateUI()
         self.prepareModel()
+        configuration = gara.getConfiguration(self.connection)
+        if configuration['state'] == State_Completed:
+            self.fillTableWithResults(self.tables[-1])
+            self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count()-1)
 
     @pyqtSlot(int, int, int, float)
     def voteUpdated(self, trial, user, judge, vote):
@@ -311,7 +323,15 @@ class GaraMainWindow (QMainWindow):
     @pyqtSlot()
     def updateUI(self):
         gara = Gara.activeInstance
-        mainbuttons = [self.ui.nextTrialButton, self.ui.endButton, self.ui.startButton]
+        mainbuttons = [
+            self.ui.nextTrialButton,
+            self.ui.endButton,
+            self.ui.startButton,
+            self.ui.actionSave,
+            self.ui.actionSaveAs,
+            self.ui.actionPettorine,
+            self.ui.actionGenera_rapporto,
+        ]
 
         for btn in mainbuttons:
             btn.setEnabled(gara is not None)
@@ -343,6 +363,8 @@ class GaraMainWindow (QMainWindow):
         done = gara.activeInstance.countDone(self.connection, trial)
         nusers = "{}/{}".format(done, configuration['nUsers'])
         self.ui.usersCounter.setText(nusers)
+
+        self.ui.data.setText(configuration['date'].strftime('%d-%m-%Y'))
 
         stato = ""
         state_conn = _translate("MainWindow", "Connesso")
@@ -400,6 +422,8 @@ class GaraMainWindow (QMainWindow):
         for j in range(1, configuration['nJudges']+1):
             labels.append(_translate("MainWindow", "Giudice {}").format(j))
         labels.append(_translate("MainWindow", "Punteggio\nprova"))
+        labels.append(_translate("MainWindow", "Punteggio\nprova\ncon crediti"))
+        labels.append(_translate("MainWindow", "Media punteggi\nprove\ncon crediti"))
         tables = []
         models = []
 
@@ -413,7 +437,7 @@ class GaraMainWindow (QMainWindow):
         for y in range(0, rows+1):
             user = gara.getUser(self.connection, y)
             for trial in range(0, trials):
-                for x in range(0, cols):
+                for x in range(0, len(labels)):
                     item = QStandardItem("")
                     item.setEditable(False)
                     item.setSelectable(True)
@@ -433,10 +457,10 @@ class GaraMainWindow (QMainWindow):
 
         labels = [_translate("MainWindow", "Pettorina")]
         for j in range(0, trials):
-            labels.append(_translate("MainWindow", "Punteggio\nprova {}").format(j+1))
-        labels.append(_translate("MainWindow", "Media"))
-        labels.append(_translate("MainWindow", "Punteggio\ncon credito"))
-        labels.append(_translate("MainWindow", "Somma"))
+            labels.append(_translate("MainWindow", "Punteggio\nprova {}\ncon crediti").format(j+1))
+        labels.append(_translate("MainWindow", "Media punteggio"))
+        labels.append(_translate("MainWindow", "Media punteggio\ncon crediti"))
+        labels.append(_translate("MainWindow", "Somma\ncon crediti"))
         cols = len(labels)
         tv, model = self.createTableAndModel(rows, cols, labels)
         self.tables.append(tv)
@@ -466,8 +490,18 @@ class GaraMainWindow (QMainWindow):
                     mostra = True
                     item.setText(_f(votes[x]))
             # score
-            if x == cols-1:
+            if x == cols-3:
                 score = user['trials'][trial]['score']
+                if score is not None:
+                    item.setText(_f(score))
+            # score bonus
+            if x == cols-2:
+                score = user['trials'][trial]['score_bonus']
+                if score is not None:
+                    item.setText(_f(score))
+            # score bonus
+            if x == cols-1:
+                score = user['trials'][trial]['average_bonus']
                 if score is not None:
                     item.setText(_f(score))
         if mostra:
@@ -476,6 +510,9 @@ class GaraMainWindow (QMainWindow):
             table.hideRow(row)
 
     def selection(self, a, b, table):
+        if a.row() == -1:
+            return
+
         if table == self.tables[-1]:
             # special Results causes, let's pretend its the latest trial
             self.selected_trial = self.tables.index(table) - 1
@@ -494,8 +531,15 @@ class GaraMainWindow (QMainWindow):
 
         self.ui.userNumber.setText(str(self.selected_user))
         self.ui.userTrial.setText(str(self.selected_trial+1))
+
         score = user['trials'][self.selected_trial]['score']
-        self.ui.userTrialAverage.setText(_f(score) if score != None else "")
+        score_bonus = user['trials'][self.selected_trial]['score_bonus']
+        average_bonus = user['trials'][self.selected_trial]['average_bonus']
+
+        self.ui.userTriaScore.setText(_f(score) if score != None else "")
+        self.ui.userTrialScoreBonus.setText(_f(score_bonus) if score_bonus != None else "")
+        self.ui.userTrialAverageBonus.setText(_f(average_bonus) if average_bonus != None else "")
+
         results = user.get('results')
         if results:
             self.ui.userAverageAll.setText(_f(results['average']))
@@ -521,8 +565,11 @@ class GaraMainWindow (QMainWindow):
             btn.setEnabled(False)
 
         self.ui.userNumber.setText("")
-        self.ui.userTrial.setText("")
-        self.ui.userTrialAverage.setText("")
+
+        self.ui.userTriaScore.setText("")
+        self.ui.userTrialScoreBonus.setText("")
+        self.ui.userTrialAverageBonus.setText("")
+
         self.ui.userAverageAll.setText("")
         self.ui.userAverageAllAndBonus.setText("")
         self.ui.userSum.setText("")
@@ -583,6 +630,10 @@ class GaraMainWindow (QMainWindow):
             if filename != None and filename[0] != '':
                 try:
                     gara = Gara.fromFilename(filename[0])
+                    c = gara.getConnection()
+                    gara.getConfiguration(c)
+                    gara.getUser(c, 0)
+                    gara.getUserInfo(c, 0)
                 except:
                     QMessageBox.critical(self,
                                          _translate("MainWindow", "Errore"),
@@ -661,6 +712,8 @@ class GaraMainWindow (QMainWindow):
                                           _translate("MainWindow", "Attenzione"),
                                           _translate("MainWindow", "A gara avviata non e' possibile modificare i bonus."),
                                           QMessageBox.Ok)
+            dlg = DlgConfigCredits(self)
+            dlg.show()
 
 
     def __init__(self):
@@ -693,8 +746,8 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         gara = Gara.fromFilename(sys.argv[1])
         Gara.setActiveInstance(gara)
-        resetToTrial(gara.getConnection(), 0)
-        setState(gara.getConnection(), State_Configure)
+        # resetToTrial(gara.getConnection(), 0)
+        # setState(gara.getConnection(), State_Configure)
         assert gara == Gara.activeInstance, "not set"
         assert gara.connection, "connection not set"
 

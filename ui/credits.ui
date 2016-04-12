@@ -6,18 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>700</width>
     <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Pettorine</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Configurazione crediti e pettorine</string>
+      <string>Impostazione crediti e pettorine</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>

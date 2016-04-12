@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_DialogCredits(object):
     def setupUi(self, DialogCredits):
         DialogCredits.setObjectName("DialogCredits")
-        DialogCredits.resize(400, 300)
+        DialogCredits.resize(700, 300)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(DialogCredits)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.groupBox = QtWidgets.QGroupBox(DialogCredits)
@@ -39,6 +39,6 @@ class Ui_DialogCredits(object):
 
     def retranslateUi(self, DialogCredits):
         _translate = QtCore.QCoreApplication.translate
-        DialogCredits.setWindowTitle(_translate("DialogCredits", "Dialog"))
-        self.groupBox.setTitle(_translate("DialogCredits", "Configurazione crediti e pettorine"))
+        DialogCredits.setWindowTitle(_translate("DialogCredits", "Pettorine"))
+        self.groupBox.setTitle(_translate("DialogCredits", "Impostazione crediti e pettorine"))
 

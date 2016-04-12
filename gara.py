@@ -296,6 +296,8 @@ def getUser(connection, user):
                 trials[k]['votes'] = votes
                 trials[k]['score'] = None
                 trials[k]['score_bonus'] = None
+                trials[k]['average'] = None
+                trials[k]['average_bonus'] = None
 
     # we need them ordered to create progessive averages
     def calcProgressive(key, store):
