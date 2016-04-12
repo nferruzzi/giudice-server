@@ -389,5 +389,50 @@ class BasicFunctionalityWithQueryCheckAverageMediata(GaraBaseTest):
         self.createAndTestVotesMediata(3.2543, 4.7525, 5.3432)
 
 
+class BasicFunctionalityWithSimpleCredits(GaraBaseTest):
+
+    def setUp(self):
+        self.gara = Gara(nJudges=6, nTrials=3, nUsers=10, average=Average_Aritmetica)
+        self.gara.createDB()
+        self.connection = self.gara.connection
+        self.gara.setState(self.connection, State_Running)
+        self.registerUsers(6)
+
+    def tearDown(self):
+        self.connection = None
+        self.gara = None
+
+    def test_addvote_checkscore(self):
+        bonus_1 = 1.0
+        bonus_2 = 2.0
+        bonus_3 = 3.0
+
+        self.gara.updateUserInfo(self.connection, {1: {1: bonus_1, 2: bonus_2, 3: bonus_3}})
+        for x in range(0, 6):
+            self.addVote(judge=x+1, user=1, trial=0, vote=5)
+        self.gara.advanceToNextTrial(self.connection)
+        for x in range(0, 6):
+            self.addVote(judge=x+1, user=1, trial=1, vote=6)
+        self.gara.advanceToNextTrial(self.connection)
+        for x in range(0, 6):
+            self.addVote(judge=x+1, user=1, trial=2, vote=7)
+        u = self.gara.getUser(self.connection, user=1)
+
+        self.assertFEqual(u['trials'][0]['score_bonus'], 5+bonus_1)
+        self.assertFEqual(u['trials'][1]['score_bonus'], 6+bonus_2)
+        self.assertFEqual(u['trials'][2]['score_bonus'], 7+bonus_3)
+
+        self.assertFEqual(u['trials'][0]['average'], 5)
+        self.assertFEqual(u['trials'][1]['average'], (5+6)/2.0)
+        self.assertFEqual(u['trials'][2]['average'], (5+6+7)/3.0)
+
+        self.assertFEqual(u['trials'][0]['average_bonus'], 5+bonus_1)
+        self.assertFEqual(u['trials'][1]['average_bonus'], (5+bonus_1+6+bonus_2)/2.0)
+        self.assertFEqual(u['trials'][2]['average_bonus'], (5+bonus_1+6+bonus_2+7+bonus_3)/3.0)
+
+        self.assertFEqual(u['results']['average'], (5+6+7)/3.0)
+        self.assertFEqual(u['results']['average_bonus'], (5+bonus_1+6+bonus_2+7+bonus_3)/3.0)
+        self.assertFEqual(u['results']['sum'], (5+bonus_1+6+bonus_2+7+bonus_3))
+
 if __name__ == '__main__':
     unittest.main()
