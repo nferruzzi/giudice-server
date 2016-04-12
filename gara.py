@@ -288,7 +288,7 @@ def getUser(connection, user):
             response['results'] = results
     else:
         # fill with dummy data
-        for k in range(0, MAX_TRIALS):
+        for k in range(0, conf['nTrials']):
             if trials.get(k) == None:
                 votes = {}
                 for i in range(0, MAX_JUDGES):
@@ -296,6 +296,7 @@ def getUser(connection, user):
                 trials[k] = {}
                 trials[k]['votes'] = votes
                 trials[k]['score'] = None
+                trials[k]['score_bonus'] = None
 
     # we need them ordered to create progessive averages
     def calcProgressive(key, store):

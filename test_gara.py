@@ -17,6 +17,10 @@ class GaraBaseTest(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def registerUsers(self, n):
+        for x in range(1, n+1):
+            self.gara.registerJudgeWithUUID(self.connection, x, str(x)*3)
+
     def addVote(self, judge, user, vote):
         user_uuid = str(judge)*3
         v = self.gara.addRemoteVote(self.connection,
@@ -118,12 +122,7 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
         self.gara.createDB()
         self.connection = self.gara.connection
         self.gara.setState(self.connection, State_Running)
-        self.gara.registerJudgeWithUUID(self.connection, 1, "111")
-        self.gara.registerJudgeWithUUID(self.connection, 2, "222")
-        self.gara.registerJudgeWithUUID(self.connection, 3, "333")
-        self.gara.registerJudgeWithUUID(self.connection, 4, "444")
-        self.gara.registerJudgeWithUUID(self.connection, 5, "555")
-        self.gara.registerJudgeWithUUID(self.connection, 6, "666")
+        self.registerUsers(6)
 
     def tearDown(self):
         self.connection = None
@@ -147,6 +146,38 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
         self.assertEqual(u['trials'][0]['votes'][1], 6.5)
         self.assertEqual(u['trials'][0]['score'], 6.5)
         self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
+
+class BasicFunctionalityWithQueryCheck(GaraBaseTest):
+
+    def setUp(self):
+        self.gara = Gara(nJudges=6, nTrials=2, nUsers=10, average=Average_Aritmetica)
+        self.gara.createDB()
+        self.connection = self.gara.connection
+        self.gara.setState(self.connection, State_Running)
+        self.registerUsers(6)
+
+    def tearDown(self):
+        self.connection = None
+        self.gara = None
+
+    def test_addvote_single(self):
+        self.addVote(judge=1, user=1, vote=6.5)
+        u = self.gara.getUser(self.connection, user=1)
+        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertEqual(u['trials'][0]['score'], None)
+        self.assertEqual(u['trials'][0]['score_bonus'], None)
+        self.assertEqual(u['trials'][1]['votes'][1], None)
+        self.assertEqual(u['trials'][1]['score'], None)
+        self.assertEqual(u['trials'][1]['score_bonus'], None)
+
+    def test_addvote_usercomplete(self):
+        for x in range(0, 6):
+            self.addVote(judge=x+1, user=1, vote=6.5)
+        u = self.gara.getUser(self.connection, user=1)
+        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertEqual(u['trials'][0]['score'], 6.5)
+        self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
+        self.assertEqual(u.get('results'), None)
 
 if __name__ == '__main__':
     unittest.main()
