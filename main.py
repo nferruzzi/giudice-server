@@ -30,6 +30,10 @@ def _e():
     return sys.exc_info()[1]
 
 
+def _f(val):
+    assert isinstance(val, float)
+    return "{:0.02f}".format(val)
+
 def getSqliteConnection(callback):
     def wrapper(*args, **kwargs):
         gara = Gara.activeInstance
@@ -245,6 +249,8 @@ class DlgConfigCredits (QDialog):
                     if user:
                         v = user['credits'][x-2]
                         if v is not None:
+                            # full float resolution to avoid cheating next
+                            # the decimal parts
                             item.setText(str(v))
 
         self.model.itemChanged.connect(self.itemChanged)
@@ -457,12 +463,12 @@ class GaraMainWindow (QMainWindow):
             if x >= 1 and x <= configuration['nJudges']:
                 if votes[x] is not None:
                     mostra = True
-                    item.setText(str(votes[x]))
+                    item.setText(_f(votes[x]))
             # score
             if x == cols-1:
                 score = user['trials'][trial]['score']
                 if score is not None:
-                    item.setText(str(score))
+                    item.setText(_f(score))
         if mostra:
             table.showRow(row)
         else:
@@ -488,12 +494,12 @@ class GaraMainWindow (QMainWindow):
         self.ui.userNumber.setText(str(self.selected_user))
         self.ui.userTrial.setText(str(self.selected_trial+1))
         score = user['trials'][self.selected_trial]['score']
-        self.ui.userTrialAverage.setText(str(score) if score != None else "")
+        self.ui.userTrialAverage.setText(_f(score) if score != None else "")
         results = user.get('results')
         if results:
-            self.ui.userAverageAll.setText(str(results['average']))
-            self.ui.userAverageAllAndBonus.setText(str(results['average_bonus']))
-            self.ui.userSum.setText(str(results['sum']))
+            self.ui.userAverageAll.setText(_f(results['average']))
+            self.ui.userAverageAllAndBonus.setText(_f(results['average_bonus']))
+            self.ui.userSum.setText(_f(results['sum']))
         else:
             self.ui.userAverageAll.setText("")
             self.ui.userAverageAllAndBonus.setText("")
@@ -632,10 +638,10 @@ class GaraMainWindow (QMainWindow):
                 vals.append(str(row))
                 for trial in range(0, configuration['nTrials']):
                     score = user['trials'][trial]['score']
-                    vals.append(str(score))
-                vals.append(str(results['average']))
-                vals.append(str(results['average_bonus']))
-                vals.append(str(results['sum']))
+                    vals.append(_f(score))
+                vals.append(_f(results['average']))
+                vals.append(_f(results['average_bonus']))
+                vals.append(_f(results['sum']))
                 cols = model.columnCount()
                 for x in range(0, cols):
                     item = model.item(row, x)
@@ -686,8 +692,8 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         gara = Gara.fromFilename(sys.argv[1])
         Gara.setActiveInstance(gara)
-        #resetToTrial(gara.getConnection(), 0)
-        #setState(gara.getConnection(), State_Configure)
+        resetToTrial(gara.getConnection(), 0)
+        setState(gara.getConnection(), State_Configure)
         assert gara == Gara.activeInstance, "not set"
         assert gara.connection, "connection not set"
 

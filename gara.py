@@ -262,7 +262,6 @@ def getUser(connection, user):
                 score = sum(vt) / len(vt)
             else:
                 score = (sum(vt) - min(vt) - max(vt)) / (len(vt)-2)
-            score = float("{:0.2f}".format(score))
             # each trial has its own bonus
             trial_credit = credits['credits'][t]
             score_bonus = score + trial_credit
@@ -282,9 +281,9 @@ def getUser(connection, user):
             average_bonus = sum(finals_average) / len(finals_average)
 
             results = {}
-            results['average'] = float("{:0.2f}".format(average))
-            results['average_bonus'] = float("{:0.2f}".format(average_bonus))
-            results['sum'] = float("{:0.2f}".format(sum(finals_average)))
+            results['average'] = average
+            results['average_bonus'] = average_bonus
+            results['sum'] = sum(finals_average)
             response['results'] = results
     else:
         # fill with dummy data
@@ -307,7 +306,7 @@ def getUser(connection, user):
                 break
             all_score.append(score)
             avg = sum(all_score) / len(all_score)
-            trials[i][store] = float("{:0.2f}".format(avg))
+            trials[i][store] = avg
 
     calcProgressive('score', 'average')
     calcProgressive('score_bonus', 'average_bonus')

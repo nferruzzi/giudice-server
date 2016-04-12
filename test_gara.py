@@ -21,15 +21,15 @@ class GaraBaseTest(unittest.TestCase):
         for x in range(1, n+1):
             self.gara.registerJudgeWithUUID(self.connection, x, str(x)*3)
 
-    def addVote(self, judge, user, vote):
+    def addVote(self, judge, user, vote, trial=0):
         user_uuid = str(judge)*3
         v = self.gara.addRemoteVote(self.connection,
-                                    trial=0,
+                                    trial=trial,
                                     user=user,
                                     judge=judge,
                                     user_uuid=user_uuid,
                                     vote=vote)
-        self.assertEqual(v[0], 200)
+        self.assertEqual(v[0], 200, v)
 
 
 class BasicFunctionality(GaraBaseTest):
@@ -147,6 +147,7 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
         self.assertEqual(u['trials'][0]['score'], 6.5)
         self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
 
+
 class BasicFunctionalityWithQueryCheck(GaraBaseTest):
 
     def setUp(self):
@@ -178,6 +179,95 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
         self.assertEqual(u['trials'][0]['score'], 6.5)
         self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
         self.assertEqual(u.get('results'), None)
+
+
+class BasicFunctionalityWithQueryCheckCompleteGara(GaraBaseTest):
+
+    def setUp(self):
+        self.gara = Gara(nJudges=6, nTrials=1, nUsers=10, average=Average_Aritmetica)
+        self.gara.createDB()
+        self.connection = self.gara.connection
+        self.gara.setState(self.connection, State_Running)
+        self.registerUsers(6)
+
+    def tearDown(self):
+        self.connection = None
+        self.gara = None
+
+    def test_addvote_single(self):
+        self.addVote(judge=1, user=1, vote=6.5)
+        u = self.gara.getUser(self.connection, user=1)
+        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertEqual(u['trials'][0]['score'], None)
+        self.assertEqual(u['trials'][0]['score_bonus'], None)
+
+    def test_addvote_usercomplete(self):
+        for x in range(0, 6):
+            self.addVote(judge=x+1, user=1, vote=6.5)
+        u = self.gara.getUser(self.connection, user=1)
+        self.assertEqual(u['trials'][0]['votes'][1], 6.5)
+        self.assertEqual(u['trials'][0]['score'], 6.5)
+        self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
+        self.assertEqual(u['results']['average'], 6.5)
+        self.assertEqual(u['results']['average_bonus'], 6.5)
+        self.assertEqual(u['results']['sum'], 6.5)
+
+
+class BasicFunctionalityWithQueryCheckAverageAritmetica(GaraBaseTest):
+
+    def setUp(self):
+        self.gara = Gara(nJudges=6, nTrials=2, nUsers=10, average=Average_Aritmetica)
+        self.gara.createDB()
+        self.connection = self.gara.connection
+        self.gara.setState(self.connection, State_Running)
+        self.registerUsers(6)
+
+    def tearDown(self):
+        self.connection = None
+        self.gara = None
+
+    def test_addvote_checkvalues(self):
+        for x in range(0, 6):
+            self.addVote(judge=x+1, user=1, vote=x)
+        u = self.gara.getUser(self.connection, user=1)
+        for x in range(0, 6):
+            self.assertEqual(u['trials'][0]['votes'][x+1], x)
+
+    def test_addvote_checkscore(self):
+        for x in range(0, 6):
+            self.addVote(judge=x+1, user=1, vote=0.25+x)
+        u = self.gara.getUser(self.connection, user=1)
+        self.assertEqual(u['trials'][0]['score'], (0.25+1.25+2.25+3.25+4.25+5.25)/6.0)
+        self.assertEqual(u['trials'][0]['score_bonus'], (0.25+1.25+2.25+3.25+4.25+5.25)/6.0)
+
+    def createAndTestVotesAritmetica(self, a, b):
+        for x in range(0, 6):
+            self.addVote(trial=0, judge=x+1, user=1, vote=a)
+        self.gara.advanceToNextTrial(self.connection)
+        for x in range(0, 6):
+            self.addVote(trial=1, judge=x+1, user=1, vote=b)
+        u = self.gara.getUser(self.connection, user=1)
+        self.assertEqual(u['trials'][0]['score'], a)
+        self.assertEqual(u['trials'][0]['score_bonus'], a)
+        self.assertEqual(u['trials'][0]['average'], a)
+        self.assertEqual(u['trials'][1]['score'], b)
+        self.assertEqual(u['trials'][1]['score_bonus'], b)
+        self.assertEqual(u['trials'][1]['average'], (a+b)/2.0)
+        self.assertEqual(u['results']['average'], (a+b)/2.0)
+        self.assertEqual(u['results']['average_bonus'], (a+b)/2.0)
+        self.assertEqual(u['results']['sum'], a+b)
+
+    def test_addvote_checkscore_complete_1(self):
+        self.createAndTestVotesAritmetica(5, 8)
+
+    def test_addvote_checkscore_complete_2(self):
+        self.createAndTestVotesAritmetica(1, 10)
+
+    def test_addvote_checkscore_complete_3(self):
+        self.createAndTestVotesAritmetica(0.5, 5.75)
+
+    def test_addvote_checkscore_complete_4(self):
+        self.createAndTestVotesAritmetica(3.25, 4.75)
 
 if __name__ == '__main__':
     unittest.main()
