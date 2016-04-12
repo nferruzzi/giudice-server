@@ -115,6 +115,40 @@ class BasicFunctionalityJudges(GaraBaseTest):
         self.assertEqual(code, 404)
 
 
+class BasicFunctionalityTrialsAdvance(GaraBaseTest):
+
+    def setUp(self):
+        self.gara = Gara(nJudges=1, nTrials=3, nUsers=10, average=Average_Aritmetica)
+        self.gara.createDB()
+        self.connection = self.gara.connection
+        self.gara.setState(self.connection, State_Running)
+        self.registerUsers(1)
+
+    def tearDown(self):
+        self.connection = None
+        self.gara = None
+
+    def test_addvote_fail_trial(self):
+        v = self.gara.addRemoteVote(self.connection, trial=0, user=1, judge=1, user_uuid="111", vote=6.5)
+        self.assertEqual(v[0], 200, v)
+        v = self.gara.addRemoteVote(self.connection, trial=1, user=1, judge=1, user_uuid="111", vote=6.5)
+        self.assertEqual(v[0], 403, v)
+        v = self.gara.advanceToNextTrial(self.connection)
+        self.assertEqual(v, (True, 1))
+        v = self.gara.addRemoteVote(self.connection, trial=1, user=1, judge=1, user_uuid="111", vote=6.5)
+        self.assertEqual(v[0], 200, v)
+
+    def test_addvote_advance_too_much(self):
+        v = self.gara.advanceToNextTrial(self.connection)
+        self.assertEqual(v, (True, 1))
+        v = self.gara.advanceToNextTrial(self.connection)
+        self.assertEqual(v, (True, 2))
+        v = self.gara.advanceToNextTrial(self.connection)
+        self.assertEqual(v, (False, 3))
+        v = self.gara.advanceToNextTrial(self.connection)
+        self.assertEqual(v, (False, 3))
+
+
 class BasicFunctionalityWithQueryCheck(GaraBaseTest):
 
     def setUp(self):
@@ -268,6 +302,9 @@ class BasicFunctionalityWithQueryCheckAverageAritmetica(GaraBaseTest):
 
     def test_addvote_checkscore_complete_4(self):
         self.createAndTestVotesAritmetica(3.25, 4.75)
+
+    def test_addvote_checkscore_complete_5(self):
+        self.createAndTestVotesAritmetica(3.2543, 4.7525)
 
 if __name__ == '__main__':
     unittest.main()
