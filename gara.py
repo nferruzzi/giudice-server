@@ -94,16 +94,16 @@ def updateUserInfo(connection, user, payload):
         vals = []
         ques = []
         vks = []
-        n = payload.get(0)
+        n = payload.get(-1)
         if n is not None:
             cols.append('nickname')
             vals.append(n)
             ques.append('?')
             vks.append('nickname=?')
-        for i in range(1, MAX_TRIALS+1):
+        for i in range(0, MAX_TRIALS):
             c = payload.get(i)
-            if c:
-                e = 'trial{}'.format(i)
+            if c is not None:
+                e = 'trial{}'.format(i+1)
                 cols.append(e)
                 vals.append(c)
                 ques.append('?')

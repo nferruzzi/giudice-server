@@ -270,7 +270,8 @@ class DlgConfigCredits (QDialog):
                     v = 0.0
             item.setText(str(v))
             g = self.changes.get(user, {})
-            g[col] = v
+            # nickname is -1 and then trial1 is 0 and so on
+            g[col-1] = v
             self.changes[user] = g
 
     def accept(self):

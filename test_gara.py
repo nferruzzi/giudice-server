@@ -406,8 +406,7 @@ class BasicFunctionalityWithSimpleCredits(GaraBaseTest):
         bonus_1 = 1.0
         bonus_2 = 2.0
         bonus_3 = 3.0
-
-        self.gara.updateUserInfo(self.connection, {1: {1: bonus_1, 2: bonus_2, 3: bonus_3}})
+        self.gara.updateUserInfo(self.connection, {1: {0: bonus_1, 1: bonus_2, 2: bonus_3}})
         for x in range(0, 6):
             self.addVote(judge=x+1, user=1, trial=0, vote=5)
         self.gara.advanceToNextTrial(self.connection)
