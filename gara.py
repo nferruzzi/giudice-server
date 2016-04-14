@@ -374,6 +374,11 @@ class Gara(QObject):
             pu = pathlib.Path(self._uuid + '.gara')
             self.filename = pd / pu
 
+    def close(self):
+        with self.lock:
+            self.connection = None
+            Gara.activeInstance = None
+
     @staticmethod
     def fromFilename(filename):
         gara = Gara(filename=filename)

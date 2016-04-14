@@ -175,6 +175,11 @@ class DlgNewGara (QDialog):
         if filename != None and filename[0] != '':
             fn = filename[0]
             pn = pathlib.Path(fn)
+            if pn == Gara.activeInstance.filename:
+                print("Save new file on current one")
+                with Gara.activeInstance.lock:
+                    self.parent().connection = None
+                    Gara.activeInstance.close()
             if pn.exists():
                 pn.unlink()
             gara = Gara(description=self.ui.description.text(),
@@ -632,8 +637,15 @@ class GaraMainWindow (QMainWindow):
                                                _translate("MainWindow", "File di gara (*.gara *.db)"))
 
         if filename != None and filename[0] != '':
-            Gara.activeInstance.saveAs(self.connection, filename[0])
-            QMessageBox.information(self, "", _translate("MainWindow", "Copia creata"), QMessageBox.Ok)
+            if pathlib.Path(filename[0]) != Gara.activeInstance.filename:
+                try:
+                    Gara.activeInstance.saveAs(self.connection, filename[0])
+                except Exception as e:
+                    QMessageBox.critical(self, "", _translate("MainWindow", "Impossibile creare la copia, provare con un'altra destinazinoe"), QMessageBox.Ok)
+                else:
+                    QMessageBox.information(self, "", _translate("MainWindow", "Copia creata"), QMessageBox.Ok)
+            else:
+                print("Same file")
 
 
     @pyqtSlot()
