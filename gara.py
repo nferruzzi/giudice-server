@@ -11,6 +11,7 @@ import time
 import threading
 import pathlib
 import apsw
+import xlsxwriter
 
 
 USER_DB_VERSION = 2
@@ -88,7 +89,6 @@ def getUserInfo(connection, user):
 
 
 def updateUserInfo(connection, user, payload):
-    print("Payloads:", payload)
     with connection:
         cols = []
         vals = []
@@ -559,6 +559,98 @@ class Gara(QObject):
     def getUserInfo(self, connection, user):
         with self.lock:
             return getUserInfo(connection, user)
+
+    def generaRapporto(self, connection, filename='demo.xlsx'):
+        conf = self.getConfiguration(connection)
+
+        with xlsxwriter.Workbook(filename, {'default_date_format': 'dd/mm/yy'}) as workbook:
+            workbook.set_properties({
+                'title':    'Report gara del {}'.format(conf['date']),
+                'author':   'Giudice di gara v1.0 by Nicola Ferruzzi https://github.com/nferruzzi/giudice-server',
+                'comments': conf['description']})
+
+            bold = workbook.add_format({'bold': True,})
+            bold.set_align('center')
+
+            center = workbook.add_format()
+            center.set_align('center')
+            center.set_bold()
+
+            vals = workbook.add_format()
+            vals.set_num_format('0.00')
+            vals.set_align('center')
+
+            tw = workbook.add_format({
+                'text_wrap': True,
+                'bold': True,
+                'align': 'center',
+                'border': 1,
+                'valign': 'vcenter',
+                'fg_color': '#D7E4BC',
+            })
+
+            locked = workbook.add_format({'locked': 1})
+
+            worksheet = workbook.add_worksheet("Risultati")
+            worksheet.set_header('&C'+conf['description']+'\n'+conf['date'].strftime('%d-%m-%Y'))
+
+            # worksheet.add_table(1, 0, 10000, 10, {'autofiller': 0})
+
+            # row = 0
+            # worksheet.write_rich_string(row, 0, conf['description'])
+            # worksheet.set_column(0, 10)
+            # worksheet.write_rich_string(row+1, 0, 'Data')
+            # worksheet.write_datetime(row+1, 1, conf['date'])
+
+            row = 0
+            worksheet.write_string(row, 0, "N°\npett.")
+            worksheet.set_row(row, 0, tw)
+#            worksheet.set_row(row, 0, bold)
+
+            worksheet.write_string(row, 1, "Candidato")
+            worksheet.set_row(row, 1, tw)
+#            worksheet.set_row(row, 1, bold)
+
+            for t in range(0, conf['nTrials']):
+                text = 'Punteggio\nprova {}'.format(t+1)
+                worksheet.write_string(row, t+2, text)
+                worksheet.set_row(row, t+2, tw)
+#                worksheet.set_row(row, t+2, bold)
+
+            worksheet.write_string(row, t+3, "Media\npunteggio")
+            worksheet.set_row(row, t+3, tw)
+#            worksheet.set_row(row, t+3, bold)
+
+            worksheet.write_string(row, t+4, "Punteggio\ncon crediti")
+            worksheet.set_row(row, t+4, tw)
+#            worksheet.set_row(row, t+4, bold)
+
+            worksheet.write_string(row, t+5, "Somma")
+            worksheet.set_row(row, t+5, tw)
+#            worksheet.set_row(row, t+5, bold)
+
+            row = 2
+            for user in range(0, conf['nUsers']):
+                user_values = self.getUser(connection, user)
+                user_info = self.getUserInfo(connection, user)
+                print(user_info)
+                worksheet.write_number(row+user, 0, user, bold)
+                worksheet.write_string(row+user, 1, '' if user_info['nickname'] is None else user_info['nickname'])
+
+                for t in range(0, conf['nTrials']):
+                    tr = user_values['trials'][t]
+                    worksheet.write_number(row+user, t+2, tr['score_bonus'], vals)
+                results = user_values['results']
+
+                worksheet.write_number(row+user, t+3, results['average'], vals)
+                worksheet.write_number(row+user, t+4, results['average_bonus'], vals)
+                worksheet.write_number(row+user, t+5, results['sum'], vals)
+
+            worksheet.set_row(0, 50)
+            worksheet.freeze_panes(1, 0)
+            worksheet.set_column(0, 0, 5)
+            worksheet.set_column(1, 1, 16)
+            worksheet.set_column(2, 10, 9)
 
 
 if __name__ == '__main__':
