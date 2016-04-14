@@ -589,6 +589,22 @@ class GaraMainWindow (QMainWindow):
         if self.selected_user is None or self.selected_trial is None:
             return
 
+        conf = Gara.activeInstance.getConfiguration(self.connection)
+
+        if conf['state'] != State_Running:
+            testo = _translate("MainWindow", "I giudizi possono essere eliminati solo a gara in corso.")
+            dlg = QMessageBox.critical(self, "Attenzione",
+                                       testo,
+                                       QMessageBox.Ok)
+            return
+
+        if conf['currentTrial'] != self.selected_trial:
+            testo = _translate("MainWindow", "Solo giudizi della prova corrente possono essere eliminati.")
+            dlg = QMessageBox.critical(self, "Attenzione",
+                                       testo,
+                                       QMessageBox.Ok)
+            return
+
         testo = _translate("MainWindow", "Tutti i giudizi per la pettorina {} della prova {} verranno eliminati. Vuoi proseguire ?").format(self.selected_user, self.selected_trial+1)
         dlg = QMessageBox.question(self, "Attenzione",
                                    testo,
