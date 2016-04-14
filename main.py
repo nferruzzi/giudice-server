@@ -10,6 +10,8 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+from PyQt5.QtPrintSupport import *
+from PyQt5.QtNetwork import *
 import http.server
 import threading
 import socketserver
@@ -339,6 +341,14 @@ class GaraMainWindow (QMainWindow):
         if gara is None:
             self.deselect()
             self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - non configurato"))
+            addrs = QNetworkInterface.allAddresses()
+            show = []
+            for h in addrs:
+                hr = h.toString()
+                if hr.startswith('192') or hr.startswith('10') or hr.startswith('172'):
+                    show.append('<font color=\"green\">{}:8000</font>'.format(hr))
+            if show:
+                self.statusLabel.setText(_translate("MainWindow", "indirizzi in uso: ") + " | ".join(show))
             return
 
         configuration = gara.getConfiguration(self.connection)
@@ -715,6 +725,23 @@ class GaraMainWindow (QMainWindow):
             dlg = DlgConfigCredits(self)
             dlg.show()
 
+    @pyqtSlot()
+    def generaRapporto(self):
+        if Gara.activeInstance is None:
+            return
+
+        where = QStandardPaths.DocumentsLocation
+        dd = QStandardPaths.writableLocation(where)
+        filename = QFileDialog.getSaveFileName(self,
+                                               _translate("MainWindow", "Salva come..."),
+                                               dd,
+                                               _translate("MainWindow", "Excel XLSX(*.xlsx)"))
+
+        if filename != None and filename[0] != '':
+            gara = Gara.activeInstance
+            gara.generaRapporto(self.connection, filename[0])
+            QMessageBox.information(self, "", _translate("MainWindow", "Rapporto generato"), QMessageBox.Ok)
+
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -725,6 +752,7 @@ class GaraMainWindow (QMainWindow):
         self.ui.actionSaveAs.triggered.connect(self.saveAs)
         self.ui.actionCarica.triggered.connect(self.open)
         self.ui.actionPettorine.triggered.connect(self.configuraPettorine)
+        self.ui.actionGenera_rapporto.triggered.connect(self.generaRapporto)
         self.showNuovaGara()
         self.statusLabel = QLabel(self.ui.statusbar)
         self.ui.statusbar.addPermanentWidget(self.statusLabel)
@@ -741,7 +769,31 @@ class GaraMainWindow (QMainWindow):
 
 if __name__ == '__main__':
     import sys
-
+    generate = False
+    if generate:
+        gara = Gara(nJudges=6,
+                    nUsers=100,
+                    nTrials=4,
+                    description="Gara di aritmetica",
+                    average=Average_Mediata,)
+        gara.createDB()
+        c = gara.getConnection()
+        for x in range(1, 6+1):
+            gara.registerJudgeWithUUID(c, x, str(x))
+        for user in range(0, 100):
+            gara.updateUserInfo(c, {user: {-1: 'Mario Rossi'}})
+        gara.setState(c, State_Running)
+        for trial in range(0, 4):
+            for user in range(100):
+                val = [4, 5, 6, 7, 8, 10]
+                for j in range(1, 6+1):
+                    gara.addRemoteVote(c, judge=j, trial=trial, user=user, user_uuid=str(j), vote=val[j-1])
+            if trial != 3:
+                gara.advanceToNextTrial(c)
+            else:
+                gara.setState(c, State_Configure)
+        gara.saveAs(c, "generato_mediata.gara")
+        exit(-1)
     gara = None
     if len(sys.argv) == 2:
         gara = Gara.fromFilename(sys.argv[1])

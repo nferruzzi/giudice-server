@@ -12,7 +12,7 @@ import threading
 import pathlib
 import apsw
 import xlsxwriter
-
+import csv
 
 USER_DB_VERSION = 2
 MAX_JUDGES = 6
@@ -118,7 +118,6 @@ def updateUserInfo(connection, user, payload):
 
         if update:
             vk = ", ".join(vks)
-            print(vk)
             query = 'update credits set {} where user=?'.format(vk)
             vals.append(user)
             print("Update credits: ", query, vals)
@@ -639,12 +638,14 @@ class Gara(QObject):
 
                 for t in range(0, conf['nTrials']):
                     tr = user_values['trials'][t]
-                    worksheet.write_number(row+user, t+2, tr['score_bonus'], vals)
-                results = user_values['results']
+                    sb = tr['score_bonus'] if tr['score_bonus'] is not None else 0.0
+                    worksheet.write_number(row+user, t+2, sb, vals)
 
-                worksheet.write_number(row+user, t+3, results['average'], vals)
-                worksheet.write_number(row+user, t+4, results['average_bonus'], vals)
-                worksheet.write_number(row+user, t+5, results['sum'], vals)
+                results = user_values.get('results')
+                if results is not None:
+                    worksheet.write_number(row+user, t+3, results['average'], vals)
+                    worksheet.write_number(row+user, t+4, results['average_bonus'], vals)
+                    worksheet.write_number(row+user, t+5, results['sum'], vals)
 
             worksheet.set_row(0, 50)
             worksheet.freeze_panes(1, 0)

@@ -469,5 +469,27 @@ class BasicFunctionalityWithCreditsInsertion(GaraBaseTest):
         self.assertFEqual(u['credits'][0], 1.0)
         self.assertEqual(u['nickname'], 'test')
 
+
+class BasicFunctionalityUserInfo(GaraBaseTest):
+
+    def setUp(self):
+        self.gara = Gara(nJudges=6, nTrials=3, nUsers=10, average=Average_Aritmetica)
+        self.gara.createDB()
+        self.connection = self.gara.connection
+        self.gara.setState(self.connection, State_Running)
+        self.registerUsers(6)
+
+    def tearDown(self):
+        self.connection = None
+        self.gara = None
+
+    def test_addvote_checkscore(self):
+        u = self.gara.getUserInfo(self.connection, 1)
+        self.assertEqual(u['nickname'], '')
+        self.gara.updateUserInfo(self.connection, {1: {-1:'test'}})
+        u = self.gara.getUserInfo(self.connection, 1)
+        self.assertEqual(u['nickname'], 'test')
+
+
 if __name__ == '__main__':
     unittest.main()
