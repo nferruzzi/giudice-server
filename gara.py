@@ -267,6 +267,7 @@ def getUser(connection, user):
 
         trials[t]['score'] = score
         trials[t]['score_bonus'] = score_bonus
+        trials[t]['average_bonus'] = None
 
     if len(trials) == nt:
         # we have all data needed to calc the results
@@ -629,23 +630,26 @@ class Gara(QObject):
 #            worksheet.set_row(row, t+5, bold)
 
             row = 2
+            index = 0
             for user in range(0, conf['nUsers']):
                 user_values = self.getUser(connection, user)
+                results = user_values.get('results')
+                if results is None:
+                    continue
+
                 user_info = self.getUserInfo(connection, user)
-                print(user_info)
-                worksheet.write_number(row+user, 0, user, bold)
-                worksheet.write_string(row+user, 1, '' if user_info['nickname'] is None else user_info['nickname'])
+                worksheet.write_number(row+index, 0, user, bold)
+                worksheet.write_string(row+index, 1, '' if user_info['nickname'] is None else user_info['nickname'])
 
                 for t in range(0, conf['nTrials']):
                     tr = user_values['trials'][t]
                     sb = tr['score_bonus'] if tr['score_bonus'] is not None else 0.0
-                    worksheet.write_number(row+user, t+2, sb, vals)
+                    worksheet.write_number(row+index, t+2, sb, vals)
 
-                results = user_values.get('results')
-                if results is not None:
-                    worksheet.write_number(row+user, t+3, results['average'], vals)
-                    worksheet.write_number(row+user, t+4, results['average_bonus'], vals)
-                    worksheet.write_number(row+user, t+5, results['sum'], vals)
+                worksheet.write_number(row+index, t+3, results['average'], vals)
+                worksheet.write_number(row+index, t+4, results['average_bonus'], vals)
+                worksheet.write_number(row+index, t+5, results['sum'], vals)
+                index = index + 1
 
             worksheet.set_row(0, 50)
             worksheet.freeze_panes(1, 0)
