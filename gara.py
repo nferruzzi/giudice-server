@@ -174,6 +174,11 @@ def resetToTrial(connection, trial=0):
     connection.cursor().execute(query, (trial,))
 
 
+def resetMaxTrials(connection, trials=0):
+    query = 'update config set "nTrials"=? where id=1'
+    connection.cursor().execute(query, (trials,))
+
+
 def setState(connection, state=State_Configure):
     query = 'update config set "state"=? where id=1'
     connection.cursor().execute(query, (state,))

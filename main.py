@@ -711,10 +711,12 @@ class GaraMainWindow (QMainWindow):
                                       _translate("MainWindow", "Concludendo l'esame non saranno accettati piu' dati in ingresso e l'esame verra' considerato concluso alla prova attuale. Proseguire ?"),
                                       QMessageBox.Yes | QMessageBox.No)
         if dlg == QMessageBox.Yes:
-            Gara.activeInstance.setState(self.connection, State_Completed)
-            self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count()-1)
-            self.deselect()
-            self.fillTableWithResults(self.tables[-1])
+            if Gara.activeInstance.setEnd(self.connection) == False:
+                # the number of trials has current
+                self.prepareModel()
+                self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count()-1)
+                self.deselect()
+                self.fillTableWithResults(self.tables[-1])
 
     def fillTableWithResults(self, table):
         model = table.model()
