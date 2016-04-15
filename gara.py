@@ -667,6 +667,15 @@ class Gara(QObject):
             worksheet.set_column(1, 1, 16)
             worksheet.set_column(2, 10, 9)
 
+    def setEnd(self, connection):
+        with self.lock:
+            conf = self.getConfiguration(connection)
+            self.setState(connection, State_Completed)
+            if conf['currentTrial'] != conf['nTrials']:
+                resetMaxTrials(connection, conf['currentTrial']+1)
+                return False
+            return True
+
 
 if __name__ == '__main__':
     c = apsw.Connection(":memory:")
