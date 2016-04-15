@@ -40,5 +40,5 @@ class Ui_DialogCredits(object):
     def retranslateUi(self, DialogCredits):
         _translate = QtCore.QCoreApplication.translate
         DialogCredits.setWindowTitle(_translate("DialogCredits", "Pettorine"))
-        self.groupBox.setTitle(_translate("DialogCredits", "Impostazione crediti e pettorine"))
+        self.groupBox.setTitle(_translate("DialogCredits", "Impostazione crediti e concorrenti"))
 

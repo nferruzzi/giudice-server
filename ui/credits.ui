@@ -17,7 +17,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Impostazione crediti e pettorine</string>
+      <string>Impostazione crediti e concorrenti</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>

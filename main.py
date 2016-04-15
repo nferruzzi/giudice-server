@@ -171,11 +171,11 @@ class DlgNewGara (QDialog):
         filename = QFileDialog.getSaveFileName(self,
                                                _translate("MainWindow", "Salva come..."),
                                                dd,
-                                               _translate("MainWindow", "File di gara (*.gara *.db)"))
+                                               _translate("MainWindow", "File di gara (*.esame *.db)"))
         if filename != None and filename[0] != '':
             fn = filename[0]
             pn = pathlib.Path(fn)
-            if pn == Gara.activeInstance.filename:
+            if Gara.activeInstance and pn == Gara.activeInstance.filename:
                 print("Save new file on current one")
                 with Gara.activeInstance.lock:
                     self.parent().connection = None
@@ -216,7 +216,7 @@ class DlgConfigCredits (QDialog):
             self.ui.buttonBox.addButton(QDialogButtonBox.Ok)
 
         labels = [
-            _translate("Credits", "Pettorina"),
+            _translate("Credits", "Concorrente"),
             _translate("Credits", "Nome e cognome")]
         for i in range(0, self.trials):
             labels.append(_translate("Credits", "Crediti\nProva {}".format(i+1)))
@@ -345,7 +345,7 @@ class GaraMainWindow (QMainWindow):
 
         if gara is None:
             self.deselect()
-            self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - non configurato"))
+            self.setWindowTitle(_translate("MainWindow", "Giudice v1.0 - non configurato"))
             addrs = QNetworkInterface.allAddresses()
             show = []
             for h in addrs:
@@ -360,7 +360,7 @@ class GaraMainWindow (QMainWindow):
         trial = configuration['currentTrial']
         nt = configuration['nTrials']
 
-        self.setWindowTitle(_translate("MainWindow", "Giudice di gara v1.0 - {} (autosalvataggio)".format(gara.filename)))
+        self.setWindowTitle(_translate("MainWindow", "Giudice v1.0 - {} (autosalvataggio)".format(gara.filename)))
         self.ui.description.setText(configuration['description'])
         self.ui.nextTrialButton.setEnabled(trial+1 < nt and configuration['state'] == State_Running)
         self.ui.startButton.setEnabled(configuration['state'] == State_Configure)
@@ -433,7 +433,7 @@ class GaraMainWindow (QMainWindow):
         rows = configuration['nUsers']
         trials = configuration['nTrials']
 
-        labels = [_translate("MainWindow", "Pettorina")]
+        labels = [_translate("MainWindow", "Concorrente")]
         for j in range(1, configuration['nJudges']+1):
             labels.append(_translate("MainWindow", "Giudice {}").format(j))
         labels.append(_translate("MainWindow", "Punteggio\nprova"))
@@ -470,7 +470,7 @@ class GaraMainWindow (QMainWindow):
         rows = configuration['nUsers']
         trials = configuration['nTrials']
 
-        labels = [_translate("MainWindow", "Pettorina")]
+        labels = [_translate("MainWindow", "Concorrente")]
         for j in range(0, trials):
             labels.append(_translate("MainWindow", "Punteggio\nprova {}\ncon crediti").format(j+1))
         labels.append(_translate("MainWindow", "Media punteggio"))
@@ -597,7 +597,7 @@ class GaraMainWindow (QMainWindow):
         conf = Gara.activeInstance.getConfiguration(self.connection)
 
         if conf['state'] != State_Running:
-            testo = _translate("MainWindow", "I giudizi possono essere eliminati solo a gara in corso.")
+            testo = _translate("MainWindow", "I giudizi possono essere eliminati solo a esame in corso.")
             dlg = QMessageBox.critical(self, "Attenzione",
                                        testo,
                                        QMessageBox.Ok)
@@ -610,7 +610,7 @@ class GaraMainWindow (QMainWindow):
                                        QMessageBox.Ok)
             return
 
-        testo = _translate("MainWindow", "Tutti i giudizi per la pettorina {} della prova {} verranno eliminati. Vuoi proseguire ?").format(self.selected_user, self.selected_trial+1)
+        testo = _translate("MainWindow", "Tutti i giudizi per il concorrente {} della prova {} verranno eliminati. Vuoi proseguire ?").format(self.selected_user, self.selected_trial+1)
         dlg = QMessageBox.question(self, "Attenzione",
                                    testo,
                                    QMessageBox.Yes | QMessageBox.No)
@@ -634,7 +634,7 @@ class GaraMainWindow (QMainWindow):
         filename = QFileDialog.getSaveFileName(self,
                                                _translate("MainWindow", "Salva come..."),
                                                dd,
-                                               _translate("MainWindow", "File di gara (*.gara *.db)"))
+                                               _translate("MainWindow", "File di esame (*.esame *.db)"))
 
         if filename != None and filename[0] != '':
             if pathlib.Path(filename[0]) != Gara.activeInstance.filename:
@@ -653,7 +653,7 @@ class GaraMainWindow (QMainWindow):
         if Gara.activeInstance is not None:
             res = QMessageBox.warning(self,
                                       _translate("MainWindow", "Attenzione"),
-                                      _translate("MainWindow", "La gara corrente verra' chiusa.\nVuoi continuare?"),
+                                      _translate("MainWindow", "L'esame corrente verra' chiuso.\nVuoi continuare?"),
                                       QMessageBox.Yes | QMessageBox.No)
         else:
             res = QMessageBox.Yes
@@ -664,7 +664,7 @@ class GaraMainWindow (QMainWindow):
             filename = QFileDialog.getOpenFileName(self,
                                                    _translate("MainWindow", "Apri gara..."),
                                                    dd,
-                                                   _translate("MainWindow", "File di gara (*.gara *.db)"))
+                                                   _translate("MainWindow", "File di esame (*.esame *.db)"))
             if filename != None and filename[0] != '':
                 try:
                     gara = Gara.fromFilename(filename[0])
@@ -675,7 +675,7 @@ class GaraMainWindow (QMainWindow):
                 except:
                     QMessageBox.critical(self,
                                          _translate("MainWindow", "Errore"),
-                                         _translate("MainWindow", "Il file scelto non rappresenta un formato di gara valido"),
+                                         _translate("MainWindow", "Il file scelto non rappresenta un formato di esame valido"),
                                          QMessageBox.Ok)
                 else:
                     self.setGara(gara)
@@ -699,7 +699,7 @@ class GaraMainWindow (QMainWindow):
     def start(self):
         dlg = QMessageBox.information(self,
                                       _translate("MainWindow", "Attenzione"),
-                                      _translate("MainWindow", "Avviando la gara non sara' piu' possibile impostare i crediti. Proseguire ?"),
+                                      _translate("MainWindow", "Avviando l'esame non sara' piu' possibile impostare i crediti. Proseguire ?"),
                                       QMessageBox.Yes | QMessageBox.No)
         if dlg == QMessageBox.Yes:
             Gara.activeInstance.setState(self.connection, State_Running)
@@ -708,7 +708,7 @@ class GaraMainWindow (QMainWindow):
     def end(self):
         dlg = QMessageBox.information(self,
                                       _translate("MainWindow", "Attenzione"),
-                                      _translate("MainWindow", "Fermando la gara non saranno accettati piu' dati in ingresso e la gara verra' considerata conclusa allo stato attuale. Proseguire ?"),
+                                      _translate("MainWindow", "Concludendo l'esame non saranno accettati piu' dati in ingresso e l'esame verra' considerato concluso alla prova attuale. Proseguire ?"),
                                       QMessageBox.Yes | QMessageBox.No)
         if dlg == QMessageBox.Yes:
             Gara.activeInstance.setState(self.connection, State_Completed)
@@ -748,7 +748,7 @@ class GaraMainWindow (QMainWindow):
         else:
             dlg = QMessageBox.information(self,
                                           _translate("MainWindow", "Attenzione"),
-                                          _translate("MainWindow", "A gara avviata non e' possibile modificare i bonus."),
+                                          _translate("MainWindow", "A esame iniziato non e' possibile modificare i bonus."),
                                           QMessageBox.Ok)
             dlg = DlgConfigCredits(self)
             dlg.show()

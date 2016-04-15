@@ -47,7 +47,7 @@ border-color: rgb(0, 0, 0);</string>
       <item>
        <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>Pettorine giudicate</string>
+         <string>Concorrenti giudicati</string>
         </property>
        </widget>
       </item>
@@ -98,14 +98,14 @@ border-color: rgb(0, 0, 0);</string>
       <item>
        <widget class="QPushButton" name="startButton">
         <property name="text">
-         <string>Avvia gara!</string>
+         <string>Avvia esame!</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="endButton">
         <property name="text">
-         <string>Fine gara!</string>
+         <string>Fine esame!</string>
         </property>
        </widget>
       </item>
@@ -233,7 +233,7 @@ border-color: rgb(0, 0, 0);</string>
          </size>
         </property>
         <property name="title">
-         <string>Pettorina selezionata</string>
+         <string>Concorrente selezionato</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
@@ -244,7 +244,7 @@ border-color: rgb(0, 0, 0);</string>
            <item row="0" column="0">
             <widget class="QLabel" name="label_4">
              <property name="text">
-              <string>Pettorina</string>
+              <string>Numero</string>
              </property>
             </widget>
            </item>
@@ -516,7 +516,7 @@ con crediti</string>
    </widget>
    <widget class="QMenu" name="menuGara">
     <property name="title">
-     <string>Gara</string>
+     <string>Esame</string>
     </property>
     <addaction name="actionPettorine"/>
    </widget>
@@ -526,12 +526,12 @@ con crediti</string>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNuova_gara">
    <property name="text">
-    <string>Nuova gara...</string>
+    <string>Nuovo esame...</string>
    </property>
   </action>
   <action name="actionCarica">
    <property name="text">
-    <string>Apri gara...</string>
+    <string>Apri esame...</string>
    </property>
   </action>
   <action name="actionSaveAs">

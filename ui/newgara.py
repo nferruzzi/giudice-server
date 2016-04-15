@@ -99,7 +99,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Nuova gara"))
+        Dialog.setWindowTitle(_translate("Dialog", "Nuovo esame"))
         self.groupBox.setTitle(_translate("Dialog", "Impostazioni"))
         self.label.setText(_translate("Dialog", "Descrizione"))
         self.label_3.setText(_translate("Dialog", "Data riferimento"))
@@ -116,7 +116,7 @@ class Ui_Dialog(object):
         self.prove.setItemText(2, _translate("Dialog", "3"))
         self.prove.setItemText(3, _translate("Dialog", "4"))
         self.prove.setItemText(4, _translate("Dialog", "5"))
-        self.label_5.setText(_translate("Dialog", "Numero partenti"))
+        self.label_5.setText(_translate("Dialog", "Numero concorrenti"))
         self.atleti.setText(_translate("Dialog", "100"))
         self.radioButton.setText(_translate("Dialog", "Media aritmetica"))
         self.radioButton_2.setText(_translate("Dialog", "Media mediata (tolto min e max)"))
