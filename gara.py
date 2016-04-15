@@ -570,8 +570,8 @@ class Gara(QObject):
 
         with xlsxwriter.Workbook(filename, {'default_date_format': 'dd/mm/yy'}) as workbook:
             workbook.set_properties({
-                'title':    'Report gara del {}'.format(conf['date']),
-                'author':   'Giudice di gara v1.0 by Nicola Ferruzzi https://github.com/nferruzzi/giudice-server',
+                'title':    'Report esame del {}'.format(conf['date']),
+                'author':   'Giudice v1.0 by Nicola Ferruzzi https://github.com/nferruzzi/giudice-server',
                 'comments': conf['description']})
 
             bold = workbook.add_format({'bold': True,})
@@ -612,7 +612,7 @@ class Gara(QObject):
             worksheet.set_row(row, 0, tw)
 #            worksheet.set_row(row, 0, bold)
 
-            worksheet.write_string(row, 1, "Candidato")
+            worksheet.write_string(row, 1, "Concorrente")
             worksheet.set_row(row, 1, tw)
 #            worksheet.set_row(row, 1, bold)
 
