@@ -1,4 +1,5 @@
 from ui.mainwindow import Ui_MainWindow
 from ui.newgara import Ui_Dialog as Ui_DlgNewGara
 from ui.credits import Ui_DialogCredits
-from ui.info import Ui_Dialog as UI_DlgInfo
+from ui.info import Ui_Dialog as Ui_DlgInfo
+from ui.judges import Ui_DlgPickJudges

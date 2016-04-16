@@ -327,6 +327,16 @@ def deleteTrialForUser(connection, trial, user):
     connection.cursor().execute(query, (user, trial))
 
 
+def deleteTrialVotesForUser(connection, trial, user, judges):
+    j = []
+    for x in range(1, MAX_JUDGES+1):
+        if x in judges:
+            j.append('"vote{}"=null'.format(x))
+    j = ", ".join(j)
+    query = 'update users set {} where "user"=? AND "trial"=?'.format(j)
+    connection.cursor().execute(query, (user, trial))
+
+
 def countDone(connection, trial):
     configuration = getConfig(connection)
     query = 'select count(*) from users where "trial"=? AND'
@@ -598,6 +608,11 @@ class Gara(QObject):
     def canCreditBeEdited(self, connection, trial):
         with self.lock:
             return countReceived(connection, trial) == 0
+
+    def deleteTrialVotesForUser(self, connection, trial, user, judges):
+        with self.lock:
+            deleteTrialVotesForUser(connection, trial, user, judges)
+            self.vote_deleted.emit(trial, user)
 
 
 if __name__ == '__main__':

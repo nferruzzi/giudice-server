@@ -146,17 +146,47 @@ class Controller (object):
 
 class DlgInfo (QDialog):
     def __init__(self, parent):
-        QDialog.__init__(self, parent)
-        self.ui = ui.UI_DlgInfo()
+        super().__init__(parent)
+        self.ui = ui.Ui_DlgInfo()
         self.ui.setupUi(self)
         self.ui.textEdit.setReadOnly(True)
         self.ui.textEdit_2.setReadOnly(True)
         self.setModal(True)
 
 
+class DlgPickJudges (QDialog, ui.Ui_DlgPickJudges):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setupUi(self)
+        self.judges = {
+            1: self.checkBox_1,
+            2: self.checkBox_2,
+            3: self.checkBox_3,
+            4: self.checkBox_4,
+            5: self.checkBox_5,
+            6: self.checkBox_6,
+        }
+        conf = Gara.activeInstance.getConfiguration(parent.connection)
+        for k, v in list(self.judges.items()):
+            if k > conf['nJudges']:
+                v.setHidden(True)
+
+
+    def accept(self):
+        judges = set()
+        for k, v in self.judges.items():
+            if v.isChecked():
+                judges.add(k)
+        Gara.activeInstance.deleteTrialVotesForUser(self.parent().connection,
+                                                    self.parent().selected_trial,
+                                                    self.parent().selected_user,
+                                                    judges)
+        super().accept()
+
+
 class DlgNewGara (QDialog):
     def __init__(self, parent):
-        QDialog.__init__(self, parent)
+        super().__init__(parent)
         self.ui = ui.Ui_DlgNewGara()
         self.ui.setupUi(self)
         self.setModal(True)
@@ -211,7 +241,7 @@ class DlgNewGara (QDialog):
 class DlgConfigCredits (QDialog):
 
     def __init__(self, parent):
-        QDialog.__init__(self, parent)
+        super().__init__(parent)
         self.ui = ui.Ui_DialogCredits()
         self.ui.setupUi(self)
         self.setModal(True)
@@ -633,20 +663,16 @@ class GaraMainWindow (QMainWindow):
                                        QMessageBox.Ok)
             return
 
-        testo = _translate("MainWindow", "Tutti i giudizi per il concorrente {} della prova {} verranno eliminati. Vuoi proseguire ?").format(self.selected_user, self.selected_trial+1)
-        dlg = QMessageBox.question(self, "Attenzione",
-                                   testo,
-                                   QMessageBox.Yes | QMessageBox.No)
-        if dlg == QMessageBox.Yes:
-            Gara.activeInstance.deleteTrialForUser(self.connection, self.selected_trial, self.selected_user)
+        dlg = DlgPickJudges(self)
+        dlg.show()
+
 
     @pyqtSlot(int, int)
     def voteDeleted(self, trial, user):
-        table = self.tables[trial]
-        model = table.model()
-        for i in range(1, model.columnCount()):
-            item = model.item(user, i)
-            item.setText("")
+        self.deselect()
+        self.prepareModel()
+        self.ui.tabWidget.setCurrentIndex(trial)
+
 
     @pyqtSlot()
     def saveAs(self):
@@ -858,8 +884,8 @@ if __name__ == '__main__':
         gara = Gara.fromFilename(sys.argv[1])
         Gara.setActiveInstance(gara)
         # gara.generateRapport(gara.getConnection())
-        # resetToTrial(gara.getConnection(), 0)
-        # setState(gara.getConnection(), State_Configure)
+        #resetToTrial(gara.getConnection(), 0)
+        #setState(gara.getConnection(), State_Configure)
         assert gara == Gara.activeInstance, "not set"
         assert gara.connection, "connection not set"
 
