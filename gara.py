@@ -340,6 +340,19 @@ def countDone(connection, trial):
     return 0
 
 
+def countReceived(connection, trial):
+    configuration = getConfig(connection)
+    query = 'select count(*) from users where "trial"=? AND ('
+    mv = []
+    for i in range(1, configuration['nJudges']+1):
+        mv.append('"vote{}" is not NULL'.format(i))
+    query += ' OR '.join(mv)
+    query += ');'
+    for v in connection.cursor().execute(query, (trial,)):
+        return v[0]
+    return 0
+
+
 class Gara(QObject):
 
     DONOT_ALLOW_DUPLICATE_JUDGES = True
@@ -581,6 +594,10 @@ class Gara(QObject):
                 resetMaxTrials(connection, conf['currentTrial']+1)
                 return False
             return True
+
+    def canCreditBeEdited(self, connection, trial):
+        with self.lock:
+            return countReceived(connection, trial) == 0
 
 
 if __name__ == '__main__':

@@ -210,12 +210,17 @@ class DlgConfigCredits (QDialog):
         self.configuration = Gara.activeInstance.getConfiguration(self.connection)
         self.rows = self.configuration['nUsers']+1
         self.trials = self.configuration['nTrials']
-        self.read_only = self.configuration['currentTrial']
 
+        self.cbe = {}
+        for t in range(0, self.configuration['nTrials']):
+            if t < self.configuration['currentTrial']:
+                cbe = False
+            else:
+                cbe = Gara.activeInstance.canCreditBeEdited(self.connection, t)
+            self.cbe[t] = cbe
 
-        if self.read_only:
-            self.ui.buttonBox.clear()
-            self.ui.buttonBox.addButton(QDialogButtonBox.Ok)
+        if False in self.cbe.values():
+            self.ui.message.setText(_translate("Credits", "Attenzione:\nnon e' possibile modificare i crediti per le prove che hanno ricevuto dei giudizi."))
 
         labels = [
             _translate("Credits", "Concorrente"),
@@ -244,8 +249,6 @@ class DlgConfigCredits (QDialog):
                 item = QStandardItem("")
                 item.setSelectable(True)
                 self.model.setItem(y, x, item)
-                if self.read_only:
-                    item.setEditable(False)
                 if x == 0:
                     item.setEditable(False)
                     g = item.font()
@@ -262,8 +265,17 @@ class DlgConfigCredits (QDialog):
                             item.setText(v)
                 if x > 1:
                     item.setData({'check': 'float', 'user': y, 'col': x-1})
-                    if user:
-                        v = user['credits'][x-2]
+                    trial = x-2
+
+                    if self.cbe[trial]:
+                        item.setEditable(True)
+                    else:
+                        item.setEditable(False)
+                        b = QBrush(QColor(200, 200, 200))
+                        item.setBackground(b)
+
+                    if user is not None:
+                        v = user['credits'][trial]
                         if v is not None:
                             # full float resolution to avoid cheating next
                             # the decimal parts
@@ -291,8 +303,7 @@ class DlgConfigCredits (QDialog):
             self.changes[user] = g
 
     def accept(self):
-        if not self.read_only:
-            Gara.activeInstance.updateUserInfo(self.connection, self.changes)
+        Gara.activeInstance.updateUserInfo(self.connection, self.changes)
         super().accept()
 
     def reject(self):
@@ -747,13 +758,13 @@ class GaraMainWindow (QMainWindow):
 
     def configuraPettorine(self):
         configuration = Gara.activeInstance.getConfiguration(self.connection)
-        if configuration['state'] == State_Configure:
+        if configuration['state'] != State_Completed:
             dlg = DlgConfigCredits(self)
             dlg.show()
         else:
             dlg = QMessageBox.information(self,
                                           _translate("MainWindow", "Attenzione"),
-                                          _translate("MainWindow", "A esame iniziato non e' possibile modificare i bonus."),
+                                          _translate("MainWindow", "A esame completato non e' possibile modificare i bonus."),
                                           QMessageBox.Ok)
             dlg = DlgConfigCredits(self)
             dlg.show()
