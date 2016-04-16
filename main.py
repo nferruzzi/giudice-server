@@ -578,7 +578,7 @@ class GaraMainWindow (QMainWindow):
             table.hideRow(row)
 
     def selection(self, a, b, table):
-        if a.row() == -1 or b.row() == -1:
+        if a.row() == -1 and b.row() == -1:
             return
 
         if table == self.tables[-1]:
