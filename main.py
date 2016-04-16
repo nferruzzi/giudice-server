@@ -98,7 +98,7 @@ def keepAlive(judge, connection=None, gara=None):
     judge = int(judge)
     configuration = Gara.activeInstance.getConfiguration(connection)
 
-    if configuration['state'] != State_Running:
+    if configuration['state'] == State_Configure:
         abort(500, {'error': 'gara not configured yet'})
 
     response = gara.getState(connection)
@@ -120,6 +120,9 @@ def vote(connection, gara):
     uuid = request.headers.get('X-User-Auth')
     if uuid is None:
         abort(401, {'error': 'no token'})
+
+    if configuration['state'] != State_Running:
+        abort(404, {'error': 'gara not running'})
 
     trial = int(request.json['trial'])
     judge = int(request.json['judge'])
@@ -181,6 +184,21 @@ class DlgPickJudges (QDialog, ui.Ui_DlgPickJudges):
                                                     self.parent().selected_trial,
                                                     self.parent().selected_user,
                                                     judges)
+        super().accept()
+
+
+class DlgMessage (QDialog, ui.Ui_DlgMessage):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setupUi(self)
+        self.setModal(True)
+
+    def accept(self):
+        Gara.activeInstance.sendMessage(self.lineEdit.text())
+        testo = _translate("MainWindow", "Messaggio inoltrato")
+        dlg = QMessageBox.information(self, "Fatto",
+                                      testo,
+                                      QMessageBox.Ok)
         super().accept()
 
 
@@ -391,6 +409,7 @@ class GaraMainWindow (QMainWindow):
             self.ui.actionSaveAs,
             self.ui.actionPettorine,
             self.ui.actionGenera_rapporto,
+            self.ui.messageJudges,
         ]
 
         for btn in mainbuttons:
@@ -827,6 +846,11 @@ class GaraMainWindow (QMainWindow):
         dlg = DlgInfo(self)
         dlg.show()
 
+    @pyqtSlot()
+    def messageJudges(self):
+        dlg = DlgMessage(self)
+        dlg.show()
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.tables = []
@@ -847,6 +871,7 @@ class GaraMainWindow (QMainWindow):
         self.ui.tabWidget.currentChanged.connect(self.tabbarChanged)
         self.ui.startButton.released.connect(self.start)
         self.ui.endButton.released.connect(self.end)
+        self.ui.messageJudges.released.connect(self.messageJudges)
 
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)

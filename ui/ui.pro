@@ -3,4 +3,5 @@ FORMS += \
     newgara.ui \
     credits.ui \
     info.ui \
-    judges.ui
+    judges.ui \
+    message.ui

@@ -196,7 +196,7 @@ def getConfig(connection):
             'currentTrial': v[6],
             'average': v[7],
             'state': v[8],
-            'uuid': v[8],
+            'uuid': v[9],
         }
     return None
 
@@ -393,6 +393,8 @@ class Gara(QObject):
         self.usersUUID = dict()
         self.usersTIME = dict()
         self._created = False
+        self._message = None
+        self._messageIndex = 0
         if filename:
             self.filename = pathlib.Path(filename)
         else:
@@ -469,6 +471,12 @@ class Gara(QObject):
                 "uuid": configuration['uuid'],
                 "description": configuration['description'],
             }
+            if self._message is not None:
+                state["message"] = {
+                    "text": self._message,
+                    "index": self._messageIndex
+                }
+
             return state
 
     def registerJudgeWithUUID(self, connection, judge, uuid):
@@ -613,6 +621,11 @@ class Gara(QObject):
         with self.lock:
             deleteTrialVotesForUser(connection, trial, user, judges)
             self.vote_deleted.emit(trial, user)
+
+    def sendMessage(self, message):
+        with self.lock:
+            self._messageIndex += 1
+            self._message = message
 
 
 if __name__ == '__main__':

@@ -89,6 +89,13 @@ border-color: rgb(0, 0, 0);</string>
        </spacer>
       </item>
       <item>
+       <widget class="QPushButton" name="messageJudges">
+        <property name="text">
+         <string>Manda messaggio...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="Line" name="line">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
