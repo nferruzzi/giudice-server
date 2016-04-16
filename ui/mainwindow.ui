@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>642</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -520,8 +520,15 @@ con crediti</string>
     </property>
     <addaction name="actionPettorine"/>
    </widget>
+   <widget class="QMenu" name="menuInformazioni">
+    <property name="title">
+     <string>Informazioni</string>
+    </property>
+    <addaction name="actionCopyright"/>
+   </widget>
    <addaction name="menuGare"/>
    <addaction name="menuGara"/>
+   <addaction name="menuInformazioni"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNuova_gara">
@@ -571,6 +578,11 @@ con crediti</string>
   <action name="actionConfigura_2">
    <property name="text">
     <string>Configura ...</string>
+   </property>
+  </action>
+  <action name="actionCopyright">
+   <property name="text">
+    <string>Copyright</string>
    </property>
   </action>
  </widget>

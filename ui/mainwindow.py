@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(800, 642)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -218,6 +218,8 @@ class Ui_MainWindow(object):
         self.menuGare.setObjectName("menuGare")
         self.menuGara = QtWidgets.QMenu(self.menubar)
         self.menuGara.setObjectName("menuGara")
+        self.menuInformazioni = QtWidgets.QMenu(self.menubar)
+        self.menuInformazioni.setObjectName("menuInformazioni")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -241,6 +243,8 @@ class Ui_MainWindow(object):
         self.actionFai_cose.setObjectName("actionFai_cose")
         self.actionConfigura_2 = QtWidgets.QAction(MainWindow)
         self.actionConfigura_2.setObjectName("actionConfigura_2")
+        self.actionCopyright = QtWidgets.QAction(MainWindow)
+        self.actionCopyright.setObjectName("actionCopyright")
         self.menuGare.addAction(self.actionNuova_gara)
         self.menuGare.addAction(self.actionCarica)
         self.menuGare.addSeparator()
@@ -249,8 +253,10 @@ class Ui_MainWindow(object):
         self.menuGare.addSeparator()
         self.menuGare.addAction(self.actionGenera_rapporto)
         self.menuGara.addAction(self.actionPettorine)
+        self.menuInformazioni.addAction(self.actionCopyright)
         self.menubar.addAction(self.menuGare.menuAction())
         self.menubar.addAction(self.menuGara.menuAction())
+        self.menubar.addAction(self.menuInformazioni.menuAction())
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(-1)
@@ -288,6 +294,7 @@ class Ui_MainWindow(object):
 "con crediti"))
         self.menuGare.setTitle(_translate("MainWindow", "Files"))
         self.menuGara.setTitle(_translate("MainWindow", "Esame"))
+        self.menuInformazioni.setTitle(_translate("MainWindow", "Informazioni"))
         self.actionNuova_gara.setText(_translate("MainWindow", "Nuovo esame..."))
         self.actionCarica.setText(_translate("MainWindow", "Apri esame..."))
         self.actionSaveAs.setText(_translate("MainWindow", "Crea una copia..."))
@@ -296,4 +303,5 @@ class Ui_MainWindow(object):
         self.actionSave.setText(_translate("MainWindow", "Salva"))
         self.actionFai_cose.setText(_translate("MainWindow", "Sviluppatori ..."))
         self.actionConfigura_2.setText(_translate("MainWindow", "Configura ..."))
+        self.actionCopyright.setText(_translate("MainWindow", "Copyright"))
 

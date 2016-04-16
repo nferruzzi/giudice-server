@@ -144,6 +144,14 @@ class Controller (object):
         self.server.stop()
 
 
+class DlgInfo (QDialog):
+    def __init__(self, parent):
+        QDialog.__init__(self, parent)
+        self.ui = ui.UI_DlgInfo()
+        self.ui.setupUi(self)
+        self.setModal(True)
+
+
 class DlgNewGara (QDialog):
     def __init__(self, parent):
         QDialog.__init__(self, parent)
@@ -786,6 +794,10 @@ class GaraMainWindow (QMainWindow):
             gara.generateRapport(self.connection, filename[0])
             QMessageBox.information(self, "", _translate("MainWindow", "Rapporto generato"), QMessageBox.Ok)
 
+    @pyqtSlot()
+    def showInfo(self):
+        dlg = DlgInfo(self)
+        dlg.show()
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -797,6 +809,7 @@ class GaraMainWindow (QMainWindow):
         self.ui.actionCarica.triggered.connect(self.open)
         self.ui.actionPettorine.triggered.connect(self.configuraPettorine)
         self.ui.actionGenera_rapporto.triggered.connect(self.generaRapporto)
+        self.ui.actionCopyright.triggered.connect(self.showInfo)
         self.showNuovaGara()
         self.statusLabel = QLabel(self.ui.statusbar)
         self.ui.statusbar.addPermanentWidget(self.statusLabel)
