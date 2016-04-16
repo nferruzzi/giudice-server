@@ -149,6 +149,8 @@ class DlgInfo (QDialog):
         QDialog.__init__(self, parent)
         self.ui = ui.UI_DlgInfo()
         self.ui.setupUi(self)
+        self.ui.textEdit.setReadOnly(True)
+        self.ui.textEdit_2.setReadOnly(True)
         self.setModal(True)
 
 
