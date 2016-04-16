@@ -772,7 +772,7 @@ class GaraMainWindow (QMainWindow):
 
         if filename != None and filename[0] != '':
             gara = Gara.activeInstance
-            gara.generaRapporto(self.connection, filename[0])
+            gara.generateRapport(self.connection, filename[0])
             QMessageBox.information(self, "", _translate("MainWindow", "Rapporto generato"), QMessageBox.Ok)
 
 
@@ -831,7 +831,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         gara = Gara.fromFilename(sys.argv[1])
         Gara.setActiveInstance(gara)
-        gara.generaRapporto(gara.getConnection())
+        # gara.generateRapport(gara.getConnection())
         # resetToTrial(gara.getConnection(), 0)
         # setState(gara.getConnection(), State_Configure)
         assert gara == Gara.activeInstance, "not set"

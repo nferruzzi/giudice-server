@@ -11,8 +11,8 @@ import time
 import threading
 import pathlib
 import apsw
-import xlsxwriter
 import csv
+from rapport import generateRapport
 
 USER_DB_VERSION = 2
 MAX_JUDGES = 6
@@ -570,145 +570,8 @@ class Gara(QObject):
         with self.lock:
             return getUserInfo(connection, user)
 
-    def generaRapporto(self, connection, filename='demo.xlsx'):
-        conf = self.getConfiguration(connection)
-
-        with xlsxwriter.Workbook(filename, {'default_date_format': 'dd/mm/yy'}) as workbook:
-            workbook.set_properties({
-                'title':    'Report esame del {}'.format(conf['date']),
-                'author':   'Giudice v1.0 by Nicola Ferruzzi https://github.com/nferruzzi/giudice-server',
-                'comments': conf['description']})
-
-            bold = workbook.add_format({'bold': True,})
-            #bold.set_align('center')
-
-            center = workbook.add_format()
-            center.set_align('center')
-            center.set_bold()
-
-            vals = workbook.add_format()
-            vals.set_num_format('0.00')
-            vals.set_align('center')
-
-            tw = workbook.add_format({
-                'text_wrap': True,
-                'bold': True,
-                'align': 'center',
-                'border': 1,
-                'valign': 'vcenter',
-                'fg_color': '#D7E4BC',
-            })
-
-            def baseGen():
-                return [
-                    ('N°\npett.', lambda n, user_values, user_info: n),
-                    ('Concorrente', lambda n, user_values, user_info: user_info['nickname'] or '')
-                ]
-
-            def dumpRows(worksheet, generator, resuls_required=True):
-                for x, g in enumerate(generator):
-                    title = g[0]
-                    worksheet.write_string(0, x, title)
-                    worksheet.set_row(0, x, tw)
-
-                row = 1
-                for user in range(0, conf['nUsers']):
-                    user_values = self.getUser(connection, user)
-                    results = user_values.get('results')
-                    if resuls_required and results is None:
-                        continue
-                    user_info = self.getUserInfo(connection, user)
-                    for x, g in enumerate(generator):
-                        gen = g[1]
-                        val = gen(user, user_values, user_info)
-                        if isinstance(val, str):
-                            worksheet.write_string(row, x, val)
-                        else:
-                            worksheet.write_number(row, x, val)
-                    row += 1
-
-                worksheet.set_row(0, 50)
-                worksheet.freeze_panes(1, 0)
-                worksheet.set_column(0, 0, 5)
-                worksheet.set_column(1, 1, 16)
-                worksheet.set_column(2, 10, 9)
-
-
-            worksheet = workbook.add_worksheet("Risultati")
-            worksheet.set_header('&C'+conf['description']+'\n'+conf['date'].strftime('%d-%m-%Y'))
-            generator = baseGen()
-
-            for t in range(0, conf['nTrials']):
-                v = ('Punteggio\nprova {}'.format(t+1), lambda n, user_values, user_info, trial=t: user_values['trials'][trial]['score_bonus'] or 0.0)
-                generator.append(v)
-
-            generator.append(('Media\npunteggio', lambda n, user_values, user_info: user_values['results']['average']))
-            generator.append(('Punteggio\ncon crediti', lambda n, user_values, user_info: user_values['results']['average_bonus']))
-            generator.append(('Somma', lambda n, user_values, user_info: user_values['results']['sum']))
-
-            dumpRows(worksheet, generator)
-
-            for t in range(conf['nTrials']):
-                worksheet = workbook.add_worksheet("Prova {}".format(t+1))
-                worksheet.set_header('&C'+conf['description']+'\n'+conf['date'].strftime('%d-%m-%Y')+'\nProva {}'.format(t+1))
-                generator = baseGen()
-
-                for j in range(1, conf['nJudges']+1):
-                    v = ('Giudice {}'.format(j), lambda n, user_values, user_info, trial=t, judge=j: user_values['trials'][trial]['votes'][judge] or 0.0)
-                    generator.append(v)
-
-                generator.append(('Punteggio', lambda n, user_values, user_info, trial=t: user_values['trials'][trial]['score'] or 0.0))
-                generator.append(('Punteggio\ncon crediti', lambda n, user_values, user_info, trial=t: user_values['trials'][trial]['score_bonus'] or 0.0))
-                # //average_bonus
-                if t != 0:
-                    generator.append(('Media\npunteggi\ncon crediti', lambda n, user_values, user_info, trial=t: user_values['trials'][trial]['average_bonus'] or 0.0))
-                dumpRows(worksheet, generator, False)
-
-
-            #
-            # row = 0
-            # worksheet.write_string(row, 0, "N°\npett.")
-            # worksheet.set_row(row, 0, tw)
-            #
-            # worksheet.write_string(row, 1, "Concorrente")
-            # worksheet.set_row(row, 1, tw)
-            #
-            # for t in range(0, conf['nTrials']):
-            #     text = 'Punteggio\nprova {}'.format(t+1)
-            #     worksheet.write_string(row, t+2, text)
-            #     worksheet.set_row(row, t+2, tw)
-            #
-            # worksheet.write_string(row, t+3, "Media\npunteggio")
-            # worksheet.set_row(row, t+3, tw)
-            #
-            # worksheet.write_string(row, t+4, "Punteggio\ncon crediti")
-            # worksheet.set_row(row, t+4, tw)
-            #
-            # worksheet.write_string(row, t+5, "Somma")
-            # worksheet.set_row(row, t+5, tw)
-            #
-            # row = 2
-            # index = 0
-            # for user in range(0, conf['nUsers']):
-            #     user_values = self.getUser(connection, user)
-            #     results = user_values.get('results')
-            #     if results is None:
-            #         continue
-            #
-            #     user_info = self.getUserInfo(connection, user)
-            #     worksheet.write_number(row+index, 0, user, bold)
-            #     worksheet.write_string(row+index, 1, '' if user_info['nickname'] is None else user_info['nickname'])
-            #
-            #     for t in range(0, conf['nTrials']):
-            #         tr = user_values['trials'][t]
-            #         sb = tr['score_bonus'] if tr['score_bonus'] is not None else 0.0
-            #         worksheet.write_number(row+index, t+2, sb, vals)
-            #
-            #     worksheet.write_number(row+index, t+3, results['average'], vals)
-            #     worksheet.write_number(row+index, t+4, results['average_bonus'], vals)
-            #     worksheet.write_number(row+index, t+5, results['sum'], vals)
-            #     index = index + 1
-
+    def generateRapport(self, connection, filename='demo2.xlsx'):
+        generateRapport(self, connection, filename)
 
     def setEnd(self, connection):
         with self.lock:
