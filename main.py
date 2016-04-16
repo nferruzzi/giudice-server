@@ -19,6 +19,7 @@ import ui
 import pathlib
 import json
 from gara import *
+from serial import *
 from bottle import Bottle, run, get, post, request
 from bottle import ServerAdapter, abort, install
 from urllib.error import HTTPError
@@ -209,7 +210,8 @@ class DlgConfigCredits (QDialog):
         self.configuration = Gara.activeInstance.getConfiguration(self.connection)
         self.rows = self.configuration['nUsers']+1
         self.trials = self.configuration['nTrials']
-        self.read_only = self.configuration['state'] != State_Configure
+        self.read_only = self.configuration['currentTrial']
+
 
         if self.read_only:
             self.ui.buttonBox.clear()
@@ -525,7 +527,7 @@ class GaraMainWindow (QMainWindow):
             table.hideRow(row)
 
     def selection(self, a, b, table):
-        if a.row() == -1:
+        if a.row() == -1 or b.row() == -1:
             return
 
         if table == self.tables[-1]:
@@ -547,9 +549,9 @@ class GaraMainWindow (QMainWindow):
         self.ui.userNumber.setText(str(self.selected_user))
         self.ui.userTrial.setText(str(self.selected_trial+1))
 
-        score = user['trials'][self.selected_trial]['score']
-        score_bonus = user['trials'][self.selected_trial]['score_bonus']
-        average_bonus = user['trials'][self.selected_trial]['average_bonus']
+        score = user['trials'][self.selected_trial]['score'] or 0.0
+        score_bonus = user['trials'][self.selected_trial]['score_bonus'] or 0.0
+        average_bonus = user['trials'][self.selected_trial]['average_bonus'] or 0.0
 
         self.ui.userTriaScore.setText(_f(score) if score != None else "")
         self.ui.userTrialScoreBonus.setText(_f(score_bonus) if score_bonus != None else "")
@@ -667,6 +669,7 @@ class GaraMainWindow (QMainWindow):
                                                    _translate("MainWindow", "File di esame (*.esame *.db)"))
             if filename != None and filename[0] != '':
                 try:
+                    self.deselect()
                     gara = Gara.fromFilename(filename[0])
                     c = gara.getConnection()
                     gara.getConfiguration(c)
@@ -828,6 +831,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         gara = Gara.fromFilename(sys.argv[1])
         Gara.setActiveInstance(gara)
+        gara.generaRapporto(gara.getConnection())
         # resetToTrial(gara.getConnection(), 0)
         # setState(gara.getConnection(), State_Configure)
         assert gara == Gara.activeInstance, "not set"
