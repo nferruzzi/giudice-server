@@ -3,7 +3,7 @@
 """
 GaraServer
 Copyright 2016 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
-License: MIT (see LICENSE)
+License: GPLv3 (see LICENSE)
 """
 from openpyxl import Workbook
 from openpyxl.styles import Font, Fill, Alignment
