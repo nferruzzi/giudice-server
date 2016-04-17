@@ -547,17 +547,21 @@ class GaraMainWindow (QMainWindow):
         rows = configuration['nUsers']
         trials = configuration['nTrials']
 
-        labels = [_translate("MainWindow", "Concorrente")]
-        for j in range(1, configuration['nJudges']+1):
-            labels.append(_translate("MainWindow", "Giudice {}").format(j))
-        labels.append(_translate("MainWindow", "Punteggio\nprova"))
-        labels.append(_translate("MainWindow", "Punteggio\nprova\ncon crediti"))
-        labels.append(_translate("MainWindow", "Media punteggi\nprove\ncon crediti"))
+        def doLabels(trial):
+            labels = [_translate("MainWindow", "Concorrente")]
+            for j in range(1, configuration['nJudges']+1):
+                labels.append(_translate("MainWindow", "Giudice {}").format(j))
+            labels.append(_translate("MainWindow", "Punteggio\nprova"))
+            labels.append(_translate("MainWindow", "Punteggio\nprova\ncon crediti"))
+            if trial != 0:
+                labels.append(_translate("MainWindow", "Media punteggi\nprove 1-{}\ncon crediti".format(trial+1)))
+            return labels
         tables = []
         models = []
 
         self.ui.tabWidget.clear()
         for i in range(trials):
+            labels = doLabels(i)
             tv, model = self.createTableAndModel(rows, cols, labels)
             tables.append(tv)
             models.append(model)
@@ -566,7 +570,8 @@ class GaraMainWindow (QMainWindow):
         for y in range(0, rows+1):
             user = gara.getUser(self.connection, y)
             for trial in range(0, trials):
-                for x in range(0, len(labels)):
+                cols = models[trial].columnCount()
+                for x in range(0, cols):
                     item = QStandardItem("")
                     item.setEditable(False)
                     item.setSelectable(True)
@@ -587,9 +592,9 @@ class GaraMainWindow (QMainWindow):
         labels = [_translate("MainWindow", "Concorrente")]
         for j in range(0, trials):
             labels.append(_translate("MainWindow", "Punteggio\nprova {}\ncon crediti").format(j+1))
-        labels.append(_translate("MainWindow", "Media punteggio"))
-        labels.append(_translate("MainWindow", "Media punteggio\ncon crediti"))
-        labels.append(_translate("MainWindow", "Somma\ncon crediti"))
+        labels.append(_translate("MainWindow", "Media punteggi\nprove"))
+        labels.append(_translate("MainWindow", "Media punteggi\nprove\ncon crediti"))
+        labels.append(_translate("MainWindow", "Somma\npunteggi prove\ncon crediti"))
         cols = len(labels)
         tv, model = self.createTableAndModel(rows, cols, labels)
         self.tables.append(tv)
@@ -619,17 +624,17 @@ class GaraMainWindow (QMainWindow):
                     mostra = True
                     item.setText(_f(votes[x]))
             # score
-            if x == cols-3:
+            if x == cols-3 or (trial == 0 and x == cols-2):
                 score = user['trials'][trial]['score']
                 if score is not None:
                     item.setText(_f(score))
             # score bonus
-            if x == cols-2:
+            if x == cols-2 or (trial == 0 and x == cols-1):
                 score = user['trials'][trial]['score_bonus']
                 if score is not None:
                     item.setText(_f(score))
             # score bonus
-            if x == cols-1:
+            if x == cols-1 and trial != 0:
                 score = user['trials'][trial]['average_bonus']
                 if score is not None:
                     item.setText(_f(score))
@@ -795,7 +800,7 @@ class GaraMainWindow (QMainWindow):
     def nextTrial(self):
         dlg = QMessageBox.information(self,
                                       _translate("MainWindow", "Attenzione"),
-                                      _translate("MainWindow", "Avanzando di prova non sara' piu' possibile registrare voti per le prove precedenti. Proseguire ?"),
+                                      _translate("MainWindow", "Avanzando di prova non sara' piu' possibile ne' registrare ne' modificare i voti per la prova corrente. Proseguire ?"),
                                       QMessageBox.Yes | QMessageBox.No)
         if dlg == QMessageBox.Yes:
             ok, trial = Gara.activeInstance.advanceToNextTrial(self.connection)
@@ -810,7 +815,7 @@ class GaraMainWindow (QMainWindow):
     def start(self):
         dlg = QMessageBox.information(self,
                                       _translate("MainWindow", "Attenzione"),
-                                      _translate("MainWindow", "Avviando l'esame non sara' piu' possibile impostare i crediti. Proseguire ?"),
+                                      _translate("MainWindow", "Avviando l'esame i giudici potranno trasmettere i loro voti. Proseguire ?"),
                                       QMessageBox.Yes | QMessageBox.No)
         if dlg == QMessageBox.Yes:
             Gara.activeInstance.setState(self.connection, State_Running)
@@ -819,7 +824,7 @@ class GaraMainWindow (QMainWindow):
     def end(self):
         dlg = QMessageBox.information(self,
                                       _translate("MainWindow", "Attenzione"),
-                                      _translate("MainWindow", "Concludendo l'esame non saranno accettati piu' dati in ingresso e l'esame verra' considerato concluso alla prova attuale. Proseguire ?"),
+                                      _translate("MainWindow", "Concludendo l'esame non saranno accettati piu' voti in ingresso e l'esame verra' considerato concluso alla prova attuale. Proseguire ?"),
                                       QMessageBox.Yes | QMessageBox.No)
         if dlg == QMessageBox.Yes:
             if Gara.activeInstance.setEnd(self.connection) == False:

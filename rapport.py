@@ -53,7 +53,6 @@ def dumpRows(gara, connection, worksheet, generator, conf, resuls_required=True,
             s = set(votes)
             if None in s and len(s) == 1:
                 continue
-            print(votes)
         user_info = gara.getUserInfo(connection, user)
         for x, g in enumerate(generator):
             gen = g[1]
@@ -114,7 +113,7 @@ def generateRapport(gara, connection, filename):
 
     generator.append(('Media punteggi', lambda n, user_values, user_info: user_values['results']['average']))
     generator.append(('Media punteggi con crediti', lambda n, user_values, user_info: user_values['results']['average_bonus']))
-    generator.append(('Somma punteggi con crediti', lambda n, user_values, user_info: user_values['results']['sum']))
+    generator.append(('Somma punteggi prove con crediti', lambda n, user_values, user_info: user_values['results']['sum']))
 
     worksheet = workbook.active
     worksheet.title = 'Risultati'
