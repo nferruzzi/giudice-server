@@ -227,7 +227,7 @@ color: rgb(255, 0, 0);</string>
       <item>
        <widget class="QPushButton" name="connectDisplay">
         <property name="text">
-         <string>Attiva display...</string>
+         <string>Attiva display</string>
         </property>
        </widget>
       </item>
