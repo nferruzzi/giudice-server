@@ -234,11 +234,9 @@ class DlgSerialConfig (QDialog, ui.Ui_DlgSerialConfig):
             v = int(self.delay.text())
             if v >= 100:
                 s.setValue("display/delay", v)
-                print(v)
             v = int(self.repeat.text())
             if v > 0:
                 s.setValue("display/repeat", v)
-                print(v)
         except:
             pass
         super().accept()
@@ -937,10 +935,12 @@ class GaraMainWindow (QMainWindow):
         user = Gara.activeInstance.getUser(self.connection, self.selected_user)
         score_bonus = user['trials'][self.selected_trial]['score_bonus'] or 0.0
         average_bonus = user['trials'][self.selected_trial]['average_bonus'] or 0.0
-        c = 'C{:03d} '.format(self.selected_user)
-        s = 'S{:02.02f} '.format(score_bonus)
-        m = 'M{:02.02f} '.format(average_bonus)
-        self.serialManager.writeMultipleStrings([c, s, m])
+        lines = []
+        lines.append('C{:03d} '.format(self.selected_user))
+        lines.append('S{:02.02f} '.format(score_bonus))
+        if self.selected_trial != 0:
+            lines.append('M{:02.02f} '.format(average_bonus))
+        self.serialManager.writeMultipleStrings(lines)
 
 
     def __init__(self):

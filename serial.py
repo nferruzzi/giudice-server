@@ -43,13 +43,13 @@ class SerialManager(QObject):
 
     def asyncDisplay(self):
         if len(self.lines):
-            l = self.lines[self.index]
-            self.index += 1
             if self.index == len(self.lines):
-                self.writeString("              ")
+                self.writeString("     ")
                 self.timer.stop()
             else:
+                l = self.lines[self.index]
                 self.writeString(l)
+                self.index += 1
 
     def writeString(self, string):
         code = bytearray([0x04, 0x07, 0x30, 0x30, 0x18, 0x09])

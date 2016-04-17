@@ -120,7 +120,7 @@ def updateUserInfo(connection, user, payload):
             vk = ", ".join(vks)
             query = 'update credits set {} where user=?'.format(vk)
             vals.append(user)
-            print("Update credits: ", query, vals)
+            # print("Update credits: ", query, vals)
             cursor.execute(query, vals)
         else:
             cols.append('user')
@@ -130,7 +130,7 @@ def updateUserInfo(connection, user, payload):
             vn = ", ".join(ques)
             query = 'insert into credits ({}) values ({})'.format(cn, vn)
             cursor.execute(query, vals)
-            print("New credits:", query, vals)
+            # print("New credits:", query, vals)
 
 
 def checkDBVersion(connection):
