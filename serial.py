@@ -16,6 +16,8 @@ from PyQt5.QtSerialPort import *
 
 class SerialManager(QObject):
 
+    serial_disconnected = pyqtSignal(name='serialDisconnected')
+
     def __init__(self, parent, portname):
         super().__init__(parent)
         self.portname = portname
@@ -55,7 +57,11 @@ class SerialManager(QObject):
         end = bytearray([0x12])
         qb = QByteArray(code+text+end)
         self.serial.write(qb)
-        self.parent().ui.displayPreview.setText(string)
+        if self.serial.waitForBytesWritten(100) and self.serial.waitForReadyRead(100):
+            self.parent().ui.displayPreview.setText(string)
+        else:
+            self.parent().ui.displayPreview.setText("Il display non risponde, assicurarsi che sia acceso e collegato.")
+            self.serial_disconnected.emit()
 
     def setSpeed(self, speed):
         assert 0 <= speed <=3, "Wrong speed"

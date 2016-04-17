@@ -898,9 +898,17 @@ class GaraMainWindow (QMainWindow):
         dlg = DlgMessage(self)
         dlg.show()
 
+
+    @pyqtSlot()
+    def serialDisconnected(self):
+        self.ui.connectDisplay.setText(_translate("MainWindow", "Collega display"))
+        if self.serialManager:
+            self.serialManager.closeSerialPort()
+            self.serialManager = None
+
     @pyqtSlot()
     def connectDisplay(self):
-        if self.serialManager == None:
+        if self.serialManager is None:
             q = QSettings()
             v = q.value("serial/name", None)
             if v != None:
@@ -909,13 +917,12 @@ class GaraMainWindow (QMainWindow):
                 if r == False:
                     self.serialManager = None
                 else:
-                    self.ui.connectDisplay.setText(_translate("MainWindow", "Disattiva display"))
+                    self.ui.connectDisplay.setText(_translate("MainWindow", "Scollega display"))
+                    self.serialManager.serial_disconnected.connect(self.serialDisconnected)
             else:
                 QMessageBox.critical(self, "Errore", _translate("MainWindow", "La porta seriale non risulta configurata.\nImpostare il display da menu"), QMessageBox.Ok)
         else:
-            self.ui.connectDisplay.setText(_translate("MainWindow", "Attiva display"))
-            self.serialManager.closeSerialPort()
-            self.serialManager = None
+            self.serialDisconnected()
 
     @pyqtSlot()
     def sendToDisplay(self):

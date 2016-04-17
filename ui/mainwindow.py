@@ -287,7 +287,7 @@ class Ui_MainWindow(object):
         self.label_12.setText(_translate("MainWindow", "Data"))
         self.label_9.setText(_translate("MainWindow", "Media"))
         self.label_5.setText(_translate("MainWindow", "Testo sul display"))
-        self.connectDisplay.setText(_translate("MainWindow", "Attiva display"))
+        self.connectDisplay.setText(_translate("MainWindow", "Collega display"))
         self.groupBox.setTitle(_translate("MainWindow", "Concorrente selezionato"))
         self.label_4.setText(_translate("MainWindow", "Numero"))
         self.label_10.setText(_translate("MainWindow", "Prova"))
