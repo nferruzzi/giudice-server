@@ -4,4 +4,5 @@ FORMS += \
     credits.ui \
     info.ui \
     judges.ui \
-    message.ui
+    message.ui \
+    serialconf.ui

@@ -12,6 +12,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtPrintSupport import *
 from PyQt5.QtNetwork import *
+from PyQt5.QtSerialPort import *
 import http.server
 import threading
 import socketserver
@@ -199,6 +200,34 @@ class DlgMessage (QDialog, ui.Ui_DlgMessage):
         dlg = QMessageBox.information(self, "Fatto",
                                       testo,
                                       QMessageBox.Ok)
+        super().accept()
+
+
+class DlgSerialConfig (QDialog, ui.Ui_DlgSerialConfig):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setupUi(self)
+        self.serials = []
+        l = QSerialPortInfo.availablePorts()
+        found = None
+        s = QSettings()
+        configured = s.value("serial/name")
+        for s in l:
+            self.serials.append(s)
+            d = s.description()
+            n = s.portName()
+            if n == configured:
+                found = s
+            self.nameBox.addItem(d)
+        if found is not None:
+            i = self.serials.index(found)
+            self.nameBox.setCurrentIndex(i)
+
+    def accept(self):
+        s = QSettings()
+        i = self.nameBox.currentIndex()
+        serial = self.serials[i]
+        s.setValue("serial/name", serial.portName())
         super().accept()
 
 
@@ -787,6 +816,11 @@ class GaraMainWindow (QMainWindow):
                 self.deselect()
                 self.fillTableWithResults(self.tables[-1])
 
+    @pyqtSlot()
+    def serialConfig(self):
+        dlg = DlgSerialConfig(self)
+        dlg.show()
+
     def fillTableWithResults(self, table):
         model = table.model()
         configuration = Gara.activeInstance.getConfiguration(self.connection)
@@ -851,6 +885,30 @@ class GaraMainWindow (QMainWindow):
         dlg = DlgMessage(self)
         dlg.show()
 
+    @pyqtSlot()
+    def connectDisplay(self):
+        q = QSettings()
+        v = q.value("serial/name", None)
+        if v != None:
+            self.serialManager = SerialManager(self, v)
+            r = self.serialManager.connectTo()
+            if r == False:
+                self.serialManager = None
+        else:
+            QMessageBox.critical(self, "Errore", _translate("MainWindow", "La porta seriale non risulta configurata.\nImpostare il display da menu"), QMessageBox.Ok)
+
+    @pyqtSlot()
+    def sendToDisplay(self):
+        if self.serialManager == None:
+            QMessageBox.critical(self, "Errore", _translate("MainWindow", "Il display non risulta collegato"), QMessageBox.Ok)
+            return
+        user = Gara.activeInstance.getUser(self.connection, self.selected_user)
+        score_bonus = user['trials'][self.selected_trial]['score_bonus'] or 0.0
+        average_bonus = user['trials'][self.selected_trial]['average_bonus'] or 0.0
+        #self.serialManager.writeString('C{:03d} '.format(self.selected_user))
+        self.serialManager.writeString('S{:02.02f} '.format(9.56))
+
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.tables = []
@@ -872,7 +930,10 @@ class GaraMainWindow (QMainWindow):
         self.ui.startButton.released.connect(self.start)
         self.ui.endButton.released.connect(self.end)
         self.ui.messageJudges.released.connect(self.messageJudges)
-
+        self.ui.display.triggered.connect(self.serialConfig)
+        self.ui.connectDisplay.released.connect(self.connectDisplay)
+        self.ui.sendToDisplay.released.connect(self.sendToDisplay)
+        self.serialManager = None
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
         timer.start(1000)
@@ -918,6 +979,11 @@ if __name__ == '__main__':
     controller = Controller()
     tr = threading.Thread(target=controller.listen)
     tr.start()
+
+    # settings
+    QCoreApplication.setOrganizationName("Nicola Ferruzzi")
+    QCoreApplication.setOrganizationDomain("github.com/nferruzzi/giudice-server")
+    QCoreApplication.setApplicationName("Giudice " + VERSION)
 
     # main ui
     app = QApplication(sys.argv)

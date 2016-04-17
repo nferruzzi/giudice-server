@@ -220,6 +220,13 @@ border-color: rgb(0, 0, 0);</string>
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QPushButton" name="connectDisplay">
+        <property name="text">
+         <string>Attiva display...</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
@@ -529,8 +536,10 @@ con crediti</string>
    </widget>
    <widget class="QMenu" name="menuInformazioni">
     <property name="title">
-     <string>Informazioni</string>
+     <string>Impostazioni</string>
     </property>
+    <addaction name="display"/>
+    <addaction name="separator"/>
     <addaction name="actionCopyright"/>
    </widget>
    <addaction name="menuGare"/>
@@ -590,6 +599,11 @@ con crediti</string>
   <action name="actionCopyright">
    <property name="text">
     <string>Copyright</string>
+   </property>
+  </action>
+  <action name="display">
+   <property name="text">
+    <string>Display...</string>
    </property>
   </action>
  </widget>
