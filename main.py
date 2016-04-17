@@ -211,6 +211,8 @@ class DlgSerialConfig (QDialog, ui.Ui_DlgSerialConfig):
         l = QSerialPortInfo.availablePorts()
         found = None
         s = QSettings()
+        self.delay.setText(str(s.value("display/delay", 4000)))
+        self.repeat.setText(str(s.value("display/repeat", 3)))
         configured = s.value("serial/name")
         for s in l:
             self.serials.append(s)
@@ -228,6 +230,17 @@ class DlgSerialConfig (QDialog, ui.Ui_DlgSerialConfig):
         i = self.nameBox.currentIndex()
         serial = self.serials[i]
         s.setValue("serial/name", serial.portName())
+        try:
+            v = int(self.delay.text())
+            if v >= 100:
+                s.setValue("display/delay", v)
+                print(v)
+            v = int(self.repeat.text())
+            if v > 0:
+                s.setValue("display/repeat", v)
+                print(v)
+        except:
+            pass
         super().accept()
 
 
@@ -887,15 +900,22 @@ class GaraMainWindow (QMainWindow):
 
     @pyqtSlot()
     def connectDisplay(self):
-        q = QSettings()
-        v = q.value("serial/name", None)
-        if v != None:
-            self.serialManager = SerialManager(self, v)
-            r = self.serialManager.connectTo()
-            if r == False:
-                self.serialManager = None
+        if self.serialManager == None:
+            q = QSettings()
+            v = q.value("serial/name", None)
+            if v != None:
+                self.serialManager = SerialManager(self, v)
+                r = self.serialManager.connectTo()
+                if r == False:
+                    self.serialManager = None
+                else:
+                    self.ui.connectDisplay.setText(_translate("MainWindow", "Disattiva display"))
+            else:
+                QMessageBox.critical(self, "Errore", _translate("MainWindow", "La porta seriale non risulta configurata.\nImpostare il display da menu"), QMessageBox.Ok)
         else:
-            QMessageBox.critical(self, "Errore", _translate("MainWindow", "La porta seriale non risulta configurata.\nImpostare il display da menu"), QMessageBox.Ok)
+            self.ui.connectDisplay.setText(_translate("MainWindow", "Attiva display"))
+            self.serialManager.closeSerialPort()
+            self.serialManager = None
 
     @pyqtSlot()
     def sendToDisplay(self):
@@ -908,7 +928,7 @@ class GaraMainWindow (QMainWindow):
         c = 'C{:03d} '.format(self.selected_user)
         s = 'S{:02.02f} '.format(score_bonus)
         m = 'M{:02.02f} '.format(average_bonus)
-        self.serialManager.writeMultipleStrings([c, s, m], 2)
+        self.serialManager.writeMultipleStrings([c, s, m])
 
 
     def __init__(self):

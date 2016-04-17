@@ -100,7 +100,9 @@ class Ui_MainWindow(object):
         self.displayPreview = QtWidgets.QLineEdit(self.centralwidget)
         self.displayPreview.setMinimumSize(QtCore.QSize(300, 0))
         self.displayPreview.setStyleSheet("background-color: rgb(220, 220, 220);\n"
-"border-color: rgb(0, 0, 0);")
+"border-color: rgb(0, 0, 0);\n"
+"color: rgb(255, 0, 0);")
+        self.displayPreview.setText("")
         self.displayPreview.setReadOnly(True)
         self.displayPreview.setObjectName("displayPreview")
         self.horizontalLayout_3.addWidget(self.displayPreview)
