@@ -6,6 +6,9 @@ Copyright 2016 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
 License: GPLv3 (see LICENSE)
 """
 import sys
+import threading
+import copy
+import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -13,6 +16,8 @@ from PyQt5.QtSerialPort import *
 
 
 class SerialManager(QObject):
+    lock = threading.RLock()
+
     def __init__(self, parent, portname):
         super().__init__(parent)
         self.portname = portname
@@ -31,9 +36,22 @@ class SerialManager(QObject):
         else:
             QMessageBox.critical(None, "Error", self.serial.errorString())
             return False
-        #self.setSpeed(0)
-        self.writeString("Giudice v1.0                !")
+        self.gogogo = True
+        self.lines = []
+        self.index = 0
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.asyncDisplay)
+        self.timer.start(4000)
         return True
+
+    def asyncDisplay(self):
+        if self.gogogo and len(self.lines):
+            with self.lock:
+                l = self.lines[self.index]
+                self.index += 1
+                if self.index == len(self.lines):
+                    self.index = 0
+                self.writeString(l)
 
     def writeString(self, string):
         code = bytearray([0x04, 0x07, 0x30, 0x30, 0x18, 0x09])
@@ -50,9 +68,17 @@ class SerialManager(QObject):
         code += bytearray([0x1b, 0x53, 0x42, 0x34+speed, 0x12])
         self.serial.write(QByteArray(code))
 
+    def writeMultipleStrings(self, lines, delay=2.0):
+        with self.lock:
+            self.index = 0
+            self.lines = lines
+            self.delay = delay
+
     def closeSerialPort(self):
         if self.serial.isOpen():
             self.serial.close()
+        self.gogogo = False
+        self.tr = None
 
     @pyqtSlot()
     def readData(self):

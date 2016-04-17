@@ -905,8 +905,10 @@ class GaraMainWindow (QMainWindow):
         user = Gara.activeInstance.getUser(self.connection, self.selected_user)
         score_bonus = user['trials'][self.selected_trial]['score_bonus'] or 0.0
         average_bonus = user['trials'][self.selected_trial]['average_bonus'] or 0.0
-        #self.serialManager.writeString('C{:03d} '.format(self.selected_user))
-        self.serialManager.writeString('S{:02.02f} '.format(9.56))
+        c = 'C{:03d} '.format(self.selected_user)
+        s = 'S{:02.02f} '.format(score_bonus)
+        m = 'M{:02.02f} '.format(average_bonus)
+        self.serialManager.writeMultipleStrings([c, s, m], 2)
 
 
     def __init__(self):
