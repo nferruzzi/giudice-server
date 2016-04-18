@@ -463,6 +463,12 @@ class Gara(QObject):
     def getState(self, connection):
         with self.lock:
             configuration = self.getConfiguration(connection)
+            msgs = {
+                State_Running: "in corso",
+                State_Completed: "terminato",
+                State_Configure: "non iniziato",
+            }
+            date = configuration['date'].strftime('%Y-%m-%d')
             state = {
                 "current_trial": configuration['currentTrial'],
                 "max_trial": configuration['nTrials'],
@@ -470,6 +476,8 @@ class Gara(QObject):
                 "max_user": configuration['nUsers'],
                 "uuid": configuration['uuid'],
                 "description": configuration['description'],
+                "state": msgs[configuration['state']],
+                "date": date,
             }
             if self._message is not None:
                 state["message"] = {
