@@ -24,13 +24,15 @@ class SerialManager(QObject):
 
     def connectTo(self):
         self.serial = QSerialPort(self)
-        self.serial.readyRead.connect(self.readData)
         self.serial.setPortName(self.portname)
         self.serial.setBaudRate(QSerialPort.Baud2400)
         self.serial.setDataBits(8)
         self.serial.setParity(QSerialPort.NoParity)
         self.serial.setStopBits(1)
-        self.serial.setFlowControl(QSerialPort.HardwareControl)
+        # does not work on windows for some reason with the adapter we got
+        # self.serial.readyRead.connect(self.readData)
+        # self.serial.readChannelFinished.connect(self.endReadData)
+        # self.serial.setFlowControl(QSerialPort.HardwareControl)
         if self.serial.open(QIODevice.ReadWrite):
             QMessageBox.information(None, "Ok", "Display collegato")
         else:
@@ -56,12 +58,22 @@ class SerialManager(QObject):
         text = bytearray(string, 'ascii')
         end = bytearray([0x12])
         qb = QByteArray(code+text+end)
-        self.serial.write(qb)
-        if self.serial.waitForBytesWritten(100) and self.serial.waitForReadyRead(100):
-            self.parent().ui.displayPreview.setText(string)
-        else:
+
+        w = self.serial.write(qb)
+        self.serial.flush()
+
+        # checks doesn't look to work on windows
+        if 0:
+            self.serial.waitForReadyRead(1000)
+            r = self.serial.readAll()
+            if len(r) == 0:
+                w = 0
+
+        if w == 0:
             self.parent().ui.displayPreview.setText("Il display non risponde, assicurarsi che sia acceso e collegato.")
             self.serial_disconnected.emit()
+        else:
+            self.parent().ui.displayPreview.setText(string)
 
     def setSpeed(self, speed):
         assert 0 <= speed <=3, "Wrong speed"
@@ -91,7 +103,13 @@ class SerialManager(QObject):
 
     @pyqtSlot()
     def readData(self):
-        pass
+        print("Data ready")
+
+    @pyqtSlot()
+    def endReadData(self):
+        print("Device closed")
+        self.parent().ui.displayPreview.setText("Il display non risponde, assicurarsi che sia acceso e collegato.")
+        self.serial_disconnected.emit()
 
     @pyqtSlot(QSerialPort.SerialPortError)
     def error(self, error):
@@ -109,6 +127,8 @@ if __name__ == '__main__':
             pass
 
     app = QApplication(sys.argv)
-    s = SerialManager(app, 'cu.usbserial-AJ03K405')
+    s = SerialManager(app, 'COM1') #cu.usbserial-AJ03K405')
     s.connectTo()
-    app.exec_()
+    s.writeString('UE')
+    s.serial.flush()
+    #app.exec_()
