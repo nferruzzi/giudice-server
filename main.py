@@ -97,10 +97,10 @@ def error404(error):
 @webapp.get('/keepAlive/<judge>')
 def keepAlive(judge, connection=None, gara=None):
     judge = int(judge)
-    configuration = Gara.activeInstance.getConfiguration(connection)
 
-    if configuration['state'] == State_Configure:
-        abort(500, {'error': 'gara not configured yet'})
+    # configuration = Gara.activeInstance.getConfiguration(connection)
+    # if configuration['state'] == State_Configure:
+    #     abort(500, {'error': 'gara not configured yet'})
 
     response = gara.getState(connection)
     response['version'] = VERSION
@@ -121,6 +121,8 @@ def vote(connection, gara):
     uuid = request.headers.get('X-User-Auth')
     if uuid is None:
         abort(401, {'error': 'no token'})
+
+    configuration = Gara.activeInstance.getConfiguration(connection)
 
     if configuration['state'] != State_Running:
         abort(404, {'error': 'gara not running'})
