@@ -629,12 +629,12 @@ class GaraMainWindow (QMainWindow):
                 if score is not None:
                     item.setText(_f(score))
             # score bonus
-            if x == cols-2 or (trial == 0 and x == cols-1):
+            elif x == cols-2 or (trial == 0 and x == cols-1):
                 score = user['trials'][trial]['score_bonus']
                 if score is not None:
                     item.setText(_f(score))
             # score bonus
-            if x == cols-1 and trial != 0:
+            elif x == cols-1 and trial != 0:
                 score = user['trials'][trial]['average_bonus']
                 if score is not None:
                     item.setText(_f(score))
