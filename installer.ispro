@@ -24,8 +24,6 @@ Distribuito su licenza GPLv3.
 http://github.com/nferruzzi/giudice-server
 http://github.com/nferruzzi/giudice-client
 Dipendenze: Qt5 - LGPL e PyQt5 -  GPL 
-
-
 [LastMessage]
 Grazie per utilizzare Giudice v1.0
 
@@ -706,7 +704,6 @@ the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>.
 
-
 [SetupFiles]
 SourceFolder=Z:\server\dist\main
 SpecialFolder=Program Files
@@ -716,7 +713,6 @@ SetupFile=C:\Users\Nicola Ferruzzi\Desktop\giudice-installer.exe
 [Shortcuts]
 ProgramGroup=Giudice
 giudice.exe=dm
-Uninstall.exe=
 
 [Registry]
 
