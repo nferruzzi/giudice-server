@@ -940,7 +940,7 @@ class GaraMainWindow (QMainWindow):
         average_bonus = user['trials'][self.selected_trial]['average_bonus'] or 0.0
         lines = []
         lines.append('C{:03d} '.format(self.selected_user))
-        lines.append('S{:02.02f} '.format(score_bonus))
+        lines.append('P{:02.02f} '.format(score_bonus))
         if self.selected_trial != 0:
             lines.append('M{:02.02f} '.format(average_bonus))
         self.serialManager.writeMultipleStrings(lines)
