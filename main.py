@@ -614,6 +614,7 @@ class GaraMainWindow (QMainWindow):
         votes = user['trials'][trial]['votes']
         cols = model.columnCount()
         jn = configuration['nJudges']
+        red = False
         for x in range(0, cols):
             item = model.item(row, x)
             # pettorina
@@ -624,6 +625,8 @@ class GaraMainWindow (QMainWindow):
                 if votes[x] is not None:
                     mostra = True
                     item.setText(_f(votes[x]))
+                else:
+                    red = True
             # score
             if x == jn+1:
                 score = user['trials'][trial]['score']
@@ -639,6 +642,13 @@ class GaraMainWindow (QMainWindow):
                 score = user['trials'][trial]['average_bonus']
                 if score is not None:
                     item.setText(_f(score))
+        for x in range(0, cols):
+            item = model.item(row, x)
+            if red:
+                b = QBrush(QColor(255, 0, 0))
+            else:
+                b = QBrush(QColor(0, 0, 0))
+            item.setForeground(b)
         if mostra:
             table.showRow(row)
         else:
@@ -750,7 +760,7 @@ class GaraMainWindow (QMainWindow):
         filename = QFileDialog.getSaveFileName(self,
                                                _translate("MainWindow", "Salva come..."),
                                                dd,
-                                               _translate("MainWindow", "File di esame (*.esame *.db)"))
+                                               _translate("MainWindow", "File di esame (*.esame)"))
 
         if filename != None and filename[0] != '':
             if pathlib.Path(filename[0]) != Gara.activeInstance.filename:
@@ -780,7 +790,7 @@ class GaraMainWindow (QMainWindow):
             filename = QFileDialog.getOpenFileName(self,
                                                    _translate("MainWindow", "Apri gara..."),
                                                    dd,
-                                                   _translate("MainWindow", "File di esame (*.esame *.db)"))
+                                                   _translate("MainWindow", "File di esame (*.esame)"))
             if filename != None and filename[0] != '':
                 try:
                     self.deselect()
@@ -797,13 +807,46 @@ class GaraMainWindow (QMainWindow):
                 else:
                     self.setGara(gara)
 
+    def warnAdvanceState(self):
+        conf = Gara.activeInstance.getConfiguration(self.connection)
+        incomplete = Gara.activeInstance.countIncomplete(self.connection, conf['currentTrial'])
+        ok = None
+        if len(incomplete) > 0:
+            i = ", ".join(str(x) for x in incomplete)
+            msg = _translate("MainWindow", "Ai concorrenti:\n{}\nmancano alcuni voti.\n\nProseguire ?").format(i)
+            dlg = QMessageBox.critical(self,
+                                       _translate("MainWindow", "Attenzione"),
+                                       msg,
+                                       QMessageBox.Yes | QMessageBox.No)
+            if dlg == QMessageBox.Yes:
+                count = Gara.activeInstance.countDone(self.connection, conf['currentTrial'])
+                diff = conf['nUsers'] - count
+                if diff > 0:
+                    msg = _translate("MainWindow", "{} concorrenti non risultano giudicati.\n\nProseguire ?").format(diff)
+                    dlg = QMessageBox.critical(self,
+                                               _translate("MainWindow", "Attenzione"),
+                                               msg,
+                                               QMessageBox.Yes | QMessageBox.No)
+                    if dlg == QMessageBox.Yes:
+                        return True
+                else:
+                    return True
+        else:
+            return None
+        return False
+
     @pyqtSlot()
     def nextTrial(self):
-        dlg = QMessageBox.information(self,
-                                      _translate("MainWindow", "Attenzione"),
-                                      _translate("MainWindow", "Avanzando di prova non sara' piu' possibile ne' registrare ne' modificare i voti per la prova corrente. Proseguire ?"),
-                                      QMessageBox.Yes | QMessageBox.No)
-        if dlg == QMessageBox.Yes:
+        cont = self.warnAdvanceState()
+        if cont is False:
+            return
+        if cont is None:
+            dlg = QMessageBox.information(self,
+                                          _translate("MainWindow", "Nota"),
+                                          _translate("MainWindow", "Avanzando di prova non sara' piu' possibile ne' registrare ne' modificare i voti per la prova corrente. Proseguire ?"),
+                                          QMessageBox.Yes | QMessageBox.No)
+            cont = dlg == QMessageBox.Yes
+        if cont:
             ok, trial = Gara.activeInstance.advanceToNextTrial(self.connection)
             if ok:
                 self.ui.tabWidget.setCurrentIndex(trial)
@@ -823,11 +866,16 @@ class GaraMainWindow (QMainWindow):
 
     @pyqtSlot()
     def end(self):
-        dlg = QMessageBox.information(self,
-                                      _translate("MainWindow", "Attenzione"),
-                                      _translate("MainWindow", "Concludendo l'esame non saranno accettati piu' voti in ingresso e l'esame verra' considerato concluso alla prova attuale. Proseguire ?"),
-                                      QMessageBox.Yes | QMessageBox.No)
-        if dlg == QMessageBox.Yes:
+        cont = self.warnAdvanceState()
+        if cont is False:
+            return
+        if cont is None:
+            dlg = QMessageBox.information(self,
+                                          _translate("MainWindow", "Attenzione"),
+                                          _translate("MainWindow", "Concludendo l'esame non saranno accettati piu' voti in ingresso e l'esame verra' considerato concluso alla prova attuale.\n\nProseguire ?"),
+                                          QMessageBox.Yes | QMessageBox.No)
+            cont = dlg == QMessageBox.Yes
+        if cont:
             if Gara.activeInstance.setEnd(self.connection) == False:
                 # the number of trials has current
                 self.prepareModel()

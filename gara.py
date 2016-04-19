@@ -229,7 +229,7 @@ def getUser(connection, user):
     nj = conf['nJudges']
     nt = conf['nTrials']
     average = conf['average']
-    query = 'select trial, vote1, vote2, vote3, vote4, vote5, vote6 from users where user=?'
+    query = 'select trial, vote1, vote2, vote3, vote4, vote5, vote6 from users where user=? and trial<?'
     response = {}
     trials = {}
 
@@ -237,7 +237,7 @@ def getUser(connection, user):
     credits = getUserInfo(connection, user)
     sum_credits = sum(credits['credits'])
 
-    for vals in connection.cursor().execute(query, (user,)):
+    for vals in connection.cursor().execute(query, (user, nt)):
         t = vals[0]
         # judge votes are stored from 1:..
         vt = vals[1:]
@@ -273,12 +273,10 @@ def getUser(connection, user):
         trials[t]['score'] = score
         trials[t]['score_bonus'] = score_bonus
         trials[t]['average_bonus'] = None
-
     if len(trials) == nt:
         # we have all data needed to calc the results
         finals = list(map(lambda x: x['score'], trials.values()))
         finals_average = list(map(lambda x: x['score_bonus'], trials.values()))
-
         if None not in finals:
             # average
             average = sum(finals) / len(finals)
@@ -361,6 +359,21 @@ def countReceived(connection, trial):
     for v in connection.cursor().execute(query, (trial,)):
         return v[0]
     return 0
+
+
+def countIncomplete(connection, trial):
+    configuration = getConfig(connection)
+    mv = []
+    query = 'select user, vote1, vote2, vote3, vote4, vote5, vote6 from users where "trial"=? AND ('
+    for i in range(1, configuration['nJudges']+1):
+        mv.append('"vote{}" is NULL'.format(i))
+    query += ' OR '.join(mv)
+    query += ');'
+    res = []
+    for v in connection.cursor().execute(query, (trial,)):
+        if set(v[1:]) != set([None]):
+            res.append(v[0])
+    return res
 
 
 class Gara(QObject):
@@ -634,6 +647,10 @@ class Gara(QObject):
         with self.lock:
             self._messageIndex += 1
             self._message = message
+
+    def countIncomplete(self, connection, trial):
+        with self.lock:
+            return countIncomplete(connection, trial)
 
 
 if __name__ == '__main__':
