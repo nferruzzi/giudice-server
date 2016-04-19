@@ -613,28 +613,29 @@ class GaraMainWindow (QMainWindow):
         model = table.model()
         votes = user['trials'][trial]['votes']
         cols = model.columnCount()
+        jn = configuration['nJudges']
         for x in range(0, cols):
             item = model.item(row, x)
             # pettorina
             if x == 0:
                 item.setText(str(row))
             # votes
-            if x >= 1 and x <= configuration['nJudges']:
+            if x >= 1 and x <= jn:
                 if votes[x] is not None:
                     mostra = True
                     item.setText(_f(votes[x]))
             # score
-            if x == cols-3 or (trial == 0 and x == cols-2):
+            if x == jn+1:
                 score = user['trials'][trial]['score']
                 if score is not None:
                     item.setText(_f(score))
             # score bonus
-            elif x == cols-2 or (trial == 0 and x == cols-1):
+            elif x == jn+2:
                 score = user['trials'][trial]['score_bonus']
                 if score is not None:
                     item.setText(_f(score))
             # score bonus
-            elif x == cols-1 and trial != 0:
+            elif x == jn+3:
                 score = user['trials'][trial]['average_bonus']
                 if score is not None:
                     item.setText(_f(score))
