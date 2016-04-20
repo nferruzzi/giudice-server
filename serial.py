@@ -8,6 +8,7 @@ License: GPLv3 (see LICENSE)
 import sys
 import copy
 import time
+import datetime
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -41,6 +42,10 @@ class SerialManager(QObject):
         self.lines = []
         self.index = 0
         self.timer = None
+        self.timeTimer = QTimer()
+        self.timeTimer.timeout.connect(self.timeLogic)
+        self.timeTimer.start(500)
+        self.currentTime = None
         return True
 
     def asyncDisplay(self):
@@ -48,10 +53,22 @@ class SerialManager(QObject):
             if self.index == len(self.lines):
                 self.writeString("     ")
                 self.timer.stop()
+                QTimer.singleShot(5000, self.resetTimer)
             else:
                 l = self.lines[self.index]
                 self.writeString(l)
                 self.index += 1
+
+    def resetTimer(self):
+        self.lines = []
+        self.currentTime = None
+
+    def timeLogic(self):
+        if len(self.lines) == 0:
+            current_time = datetime.datetime.now().time().strftime('%H:%M')
+            if self.currentTime != current_time:
+                self.writeString(current_time)
+                self.currentTime = current_time
 
     def writeString(self, string):
         code = bytearray([0x04, 0x07, 0x30, 0x30, 0x18, 0x09])
