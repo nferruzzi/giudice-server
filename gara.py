@@ -257,15 +257,30 @@ def getUser(connection, user):
         trials[t] = {}
         trials[t]['votes'] = votes
 
+        score = None
+        score_bonus = None
+        partials = False
+
         if None in votes.values():
-            score = None
-            score_bonus = None
+            # partial sums for the sake of it
+            vt = list(votes.values())
+            while None in vt:
+                vt.remove(None)
+            if len(vt):
+                partials = True
+                if average == Average_Aritmetica:
+                    score = sum(vt) / len(vt)
+                else:
+                    if len(vt) > 2:
+                        score = (sum(vt) - min(vt) - max(vt)) / (len(vt)-2)
         else:
             vt = votes.values()
             if average == Average_Aritmetica:
                 score = sum(vt) / len(vt)
             else:
                 score = (sum(vt) - min(vt) - max(vt)) / (len(vt)-2)
+
+        if score is not None:
             # each trial has its own bonus
             trial_credit = credits['credits'][t]
             score_bonus = score + trial_credit
@@ -273,6 +288,7 @@ def getUser(connection, user):
         trials[t]['score'] = score
         trials[t]['score_bonus'] = score_bonus
         trials[t]['average_bonus'] = None
+        trials[t]['partials'] = partials
     if len(trials) == nt:
         # we have all data needed to calc the results
         finals = list(map(lambda x: x['score'], trials.values()))
