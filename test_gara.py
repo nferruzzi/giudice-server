@@ -170,8 +170,9 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
         self.addVote(judge=1, user=1, vote=6.5)
         u = self.gara.getUser(self.connection, user=1)
         self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
-        self.assertEqual(u['trials'][0]['score'], None)
-        self.assertEqual(u['trials'][0]['score_bonus'], None)
+        self.assertEqual(u['trials'][0]['score'], 6.5)
+        self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
+        self.assertEqual(u['trials'][0]['partials'], True)
 
     def test_addvote_usercomplete(self):
         self.addVote(judge=1, user=1, vote=6.5)
@@ -203,8 +204,9 @@ class BasicFunctionalityWithQueryCheck(GaraBaseTest):
         self.addVote(judge=1, user=1, vote=6.5)
         u = self.gara.getUser(self.connection, user=1)
         self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
-        self.assertEqual(u['trials'][0]['score'], None)
-        self.assertEqual(u['trials'][0]['score_bonus'], None)
+        self.assertEqual(u['trials'][0]['score'], 6.5)
+        self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
+        self.assertEqual(u['trials'][0]['partials'], True)
         self.assertEqual(u['trials'][1]['votes'][1], None)
         self.assertEqual(u['trials'][1]['score'], None)
         self.assertEqual(u['trials'][1]['score_bonus'], None)
@@ -236,8 +238,9 @@ class BasicFunctionalityWithQueryCheckCompleteGara(GaraBaseTest):
         self.addVote(judge=1, user=1, vote=6.5)
         u = self.gara.getUser(self.connection, user=1)
         self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
-        self.assertEqual(u['trials'][0]['score'], None)
-        self.assertEqual(u['trials'][0]['score_bonus'], None)
+        self.assertEqual(u['trials'][0]['score'], 6.5)
+        self.assertEqual(u['trials'][0]['score_bonus'], 6.5)
+        self.assertEqual(u['trials'][0]['partials'], True)
 
     def test_addvote_usercomplete(self):
         for x in range(0, 6):
@@ -246,6 +249,7 @@ class BasicFunctionalityWithQueryCheckCompleteGara(GaraBaseTest):
         self.assertFEqual(u['trials'][0]['votes'][1], 6.5)
         self.assertFEqual(u['trials'][0]['score'], 6.5)
         self.assertFEqual(u['trials'][0]['score_bonus'], 6.5)
+        self.assertFEqual(u['trials'][0]['partials'], False)
         self.assertFEqual(u['results']['average'], 6.5)
         self.assertFEqual(u['results']['average_bonus'], 6.5)
         self.assertFEqual(u['results']['sum'], 6.5)
