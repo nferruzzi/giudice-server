@@ -810,30 +810,35 @@ class GaraMainWindow (QMainWindow):
     def warnAdvanceState(self):
         conf = Gara.activeInstance.getConfiguration(self.connection)
         incomplete = Gara.activeInstance.countIncomplete(self.connection, conf['currentTrial'])
+        count = Gara.activeInstance.countDone(self.connection, conf['currentTrial'])
+        diff = conf['nUsers'] - count
         ok = None
-        if len(incomplete) > 0:
+        test_incomplete = len(incomplete) > 0
+        test_count = diff > 0
+
+        if not test_incomplete and not test_count:
+            return None
+
+        if test_incomplete:
             i = ", ".join(str(x) for x in incomplete)
             msg = _translate("MainWindow", "Ai concorrenti:\n{}\nmancano alcuni voti.\n\nProseguire ?").format(i)
             dlg = QMessageBox.critical(self,
                                        _translate("MainWindow", "Attenzione"),
                                        msg,
                                        QMessageBox.Yes | QMessageBox.No)
-            if dlg == QMessageBox.Yes:
-                count = Gara.activeInstance.countDone(self.connection, conf['currentTrial'])
-                diff = conf['nUsers'] - count
-                if diff > 0:
-                    msg = _translate("MainWindow", "{} concorrenti non risultano giudicati.\n\nProseguire ?").format(diff)
-                    dlg = QMessageBox.critical(self,
-                                               _translate("MainWindow", "Attenzione"),
-                                               msg,
-                                               QMessageBox.Yes | QMessageBox.No)
-                    if dlg == QMessageBox.Yes:
-                        return True
-                else:
-                    return True
-        else:
-            return None
-        return False
+            if dlg == QMessageBox.No:
+                return False
+
+        if test_count:
+            msg = _translate("MainWindow", "{} concorrenti non risultano giudicati.\n\nProseguire ?").format(diff)
+            dlg = QMessageBox.critical(self,
+                                       _translate("MainWindow", "Attenzione"),
+                                       msg,
+                                       QMessageBox.Yes | QMessageBox.No)
+            if dlg == QMessageBox.No:
+                    return False
+
+        return True
 
     @pyqtSlot()
     def nextTrial(self):
