@@ -836,7 +836,7 @@ class GaraMainWindow (QMainWindow):
                                        msg,
                                        QMessageBox.Yes | QMessageBox.No)
             if dlg == QMessageBox.No:
-                    return False
+                return False
 
         return True
 
