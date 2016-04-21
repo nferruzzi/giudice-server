@@ -767,7 +767,7 @@ class GaraMainWindow (QMainWindow):
                 try:
                     Gara.activeInstance.saveAs(self.connection, filename[0])
                 except Exception as e:
-                    QMessageBox.critical(self, "", _translate("MainWindow", "Impossibile creare la copia, provare con un'altra destinazinoe"), QMessageBox.Ok)
+                    QMessageBox.critical(self, "", _translate("MainWindow", "Impossibile creare la copia, provare con un'altra destinazione"), QMessageBox.Ok)
                 else:
                     QMessageBox.information(self, "", _translate("MainWindow", "Copia creata"), QMessageBox.Ok)
             else:
