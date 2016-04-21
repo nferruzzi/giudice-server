@@ -425,8 +425,17 @@ class GaraMainWindow (QMainWindow):
         dlg = DlgNewGara(self)
         dlg.show()
 
+    def setShowOnDisplay(self, trial, user):
+        g = self.show_on_display.get(trial, {})
+        g[user] = True
+
+    def isShowOnDisplay(self, trial, user):
+        g = self.show_on_display.get(trial, {})
+        return g.get(user, False)
+
     def setGara(self, gara):
         Gara.setActiveInstance(gara)
+        self.show_on_display = {}
         assert gara == Gara.activeInstance, "not the same"
         self.connection = gara.getConnection()
         # gara is on a different thread but for Qt is the same
@@ -653,8 +662,15 @@ class GaraMainWindow (QMainWindow):
                     item.setText(_f(score))
         for x in range(0, cols):
             item = model.item(row, x)
-            if red:
+            green = self.isShowOnDisplay(trial, row)
+
+            if x == 0 and red:
                 b = QBrush(QColor(255, 0, 0))
+                item.setForeground(b)
+                continue
+
+            if green:
+                b = QBrush(QColor(0, 255, 0))
             else:
                 b = QBrush(QColor(0, 0, 0))
             item.setForeground(b)
@@ -1006,11 +1022,21 @@ class GaraMainWindow (QMainWindow):
         if self.selected_trial != 0:
             lines.append('M{:02.02f} '.format(average_bonus))
         self.serialManager.writeMultipleStrings(lines)
+        self.setShowOnDisplay(self.selected_trial, self.selected_user)
+        for t in [self.tables[self.selected_trial], self.tables[-1]]:
+            model = t.model()
+            cols = model.columnCount()
+            for x in range(1, cols+1):
+                item = model.item(self.selected_user, x)
+                if item is not None:
+                    b = QBrush(QColor(0, 255, 0))
+                    item.setForeground(b)
 
 
     def __init__(self):
         QMainWindow.__init__(self)
         self.tables = []
+        self.show_on_display = {}
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.actionNuova_gara.triggered.connect(self.showNuovaGara)
