@@ -277,12 +277,21 @@ class DlgNewGara (QDialog):
             fn = filename[0]
             pn = pathlib.Path(fn)
             if Gara.activeInstance and pn == Gara.activeInstance.filename:
-                print("Save new file on current one")
-                with Gara.activeInstance.lock:
-                    self.parent().connection = None
-                    Gara.activeInstance.close()
-            if pn.exists():
-                pn.unlink()
+                QMessageBox.critical(self, "", _translate("MainWindow", "Impossibile creare una nuova gara sul file corrente, riprovare con un'altra destinazione"), QMessageBox.Ok)
+                return
+                # print("Save new file on current one")
+                # with Gara.activeInstance.lock:
+                #     self.parent().connection = None
+                #     Gara.activeInstance.close()
+                #     Gara.activeInstance = None
+
+            try:
+                if pn.exists():
+                    pn.unlink()
+            except:
+                QMessageBox.critical(self, "", _translate("MainWindow", "Impossibile creare una nuova gara sul file selezinato, riprovare con un'altra destinazione"), QMessageBox.Ok)
+                return
+
             gara = Gara(description=self.ui.description.text(),
                         nJudges=int(ng),
                         date=self.ui.dateEdit.date(),
