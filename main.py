@@ -1010,7 +1010,6 @@ class GaraMainWindow (QMainWindow):
         self.ui.actionPettorine.triggered.connect(self.configuraPettorine)
         self.ui.actionGenera_rapporto.triggered.connect(self.generaRapporto)
         self.ui.actionCopyright.triggered.connect(self.showInfo)
-        self.showNuovaGara()
         self.statusLabel = QLabel(self.ui.statusbar)
         self.ui.statusbar.addPermanentWidget(self.statusLabel)
         self.ui.deselectRow.released.connect(self.deselect)
@@ -1027,6 +1026,8 @@ class GaraMainWindow (QMainWindow):
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
         timer.start(1000)
+        if Gara.activeInstance is None:
+            self.showNuovaGara()
 
 if __name__ == '__main__':
     import sys
