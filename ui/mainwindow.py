@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 642)
+        MainWindow.resize(840, 652)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -214,13 +214,17 @@ class Ui_MainWindow(object):
         self.userTrialScoreBonus.setObjectName("userTrialScoreBonus")
         self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.userTrialScoreBonus)
         self.verticalLayout_2.addLayout(self.formLayout_2)
+        self.widget = QNFLogo(self.groupBox)
+        self.widget.setMinimumSize(QtCore.QSize(0, 100))
+        self.widget.setObjectName("widget")
+        self.verticalLayout_2.addWidget(self.widget)
         spacerItem1 = QtWidgets.QSpacerItem(20, 29, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem1)
         self.horizontalLayout_4.addWidget(self.groupBox)
         self.verticalLayout_3.addLayout(self.horizontalLayout_4)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 840, 22))
         self.menubar.setObjectName("menubar")
         self.menuGare = QtWidgets.QMenu(self.menubar)
         self.menuGare.setObjectName("menuGare")
@@ -320,3 +324,4 @@ class Ui_MainWindow(object):
         self.actionCopyright.setText(_translate("MainWindow", "Copyright"))
         self.display.setText(_translate("MainWindow", "Display..."))
 
+from qnflogo import QNFLogo

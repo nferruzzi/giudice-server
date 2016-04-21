@@ -5,3 +5,4 @@ from ui.info import Ui_Dialog as Ui_DlgInfo
 from ui.judges import Ui_DlgPickJudges
 from ui.message import Ui_DlgMessage
 from ui.serialconf import Ui_DlgSerialConfig
+from ui.resources import *

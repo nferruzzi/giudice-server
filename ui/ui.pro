@@ -6,3 +6,6 @@ FORMS += \
     judges.ui \
     message.ui \
     serialconf.ui
+
+RESOURCES += \
+    resources.qrc

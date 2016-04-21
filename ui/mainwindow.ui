@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>642</height>
+    <width>840</width>
+    <height>652</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -492,6 +492,16 @@ con crediti</string>
           </layout>
          </item>
          <item>
+          <widget class="QNFLogo" name="widget" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>100</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="verticalSpacer">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -516,7 +526,7 @@ con crediti</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>840</width>
      <height>22</height>
     </rect>
    </property>
@@ -611,6 +621,14 @@ con crediti</string>
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QNFLogo</class>
+   <extends>QWidget</extends>
+   <header>qnflogo.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

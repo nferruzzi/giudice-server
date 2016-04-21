@@ -1076,6 +1076,7 @@ if __name__ == '__main__':
     QCoreApplication.setApplicationName("Giudice " + VERSION)
 
     # main ui
+    ui.qInitResources()
     app = QApplication(sys.argv)
     MainWindow = GaraMainWindow()
     if gara:

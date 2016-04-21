@@ -5,3 +5,4 @@ pyuic5 info.ui > info.py
 pyuic5 judges.ui > judges.py
 pyuic5 message.ui > message.py
 pyuic5 serialconf.ui > serialconf.py
+pyrcc5 -o resources.py resources.qrc

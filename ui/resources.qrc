@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>logo_rc_esteso.png</file>
+    </qresource>
+</RCC>
