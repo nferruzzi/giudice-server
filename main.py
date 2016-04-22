@@ -29,6 +29,8 @@ VERSION = '1.0'
 webapp = Bottle()
 _translate = QCoreApplication.translate
 
+COLOR_ROW_INCOMPLETE = QColor(255, 0, 0)
+COLOR_ROW_DISPLAY = QColor(0, 200, 0)
 
 def _e():
     return sys.exc_info()[1]
@@ -664,15 +666,25 @@ class GaraMainWindow (QMainWindow):
             item = model.item(row, x)
             green = self.isShowOnDisplay(trial, row)
 
-            if x == 0 and red:
-                b = QBrush(QColor(255, 0, 0))
-                item.setForeground(b)
+            if x == 0:
+                if red:
+                    b = QBrush(COLOR_ROW_INCOMPLETE)
+                    item.setForeground(b)
+                    g = item.font()
+                    g.setBold(True)
+                    item.setFont(g)
+                else:
+                    b = QBrush(Qt.black)
+                    item.setForeground(b)
+                    g = item.font()
+                    g.setBold(False)
+                    item.setFont(g)
                 continue
 
             if green:
-                b = QBrush(QColor(0, 255, 0))
+                b = QBrush(COLOR_ROW_DISPLAY)
             else:
-                b = QBrush(QColor(0, 0, 0))
+                b = QBrush(Qt.black)
             item.setForeground(b)
         if mostra:
             table.showRow(row)
@@ -1029,7 +1041,7 @@ class GaraMainWindow (QMainWindow):
             for x in range(1, cols+1):
                 item = model.item(self.selected_user, x)
                 if item is not None:
-                    b = QBrush(QColor(0, 255, 0))
+                    b = QBrush(COLOR_ROW_DISPLAY)
                     item.setForeground(b)
 
 

@@ -497,7 +497,7 @@ class Gara(QObject):
                 State_Completed: "terminato",
                 State_Configure: "non iniziato",
             }
-            date = configuration['date'].strftime('%Y-%m-%d')
+            date = configuration['date'].strftime('%d-%m-%Y')
             state = {
                 "current_trial": configuration['currentTrial'],
                 "max_trial": configuration['nTrials'],
