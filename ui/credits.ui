@@ -10,8 +10,11 @@
     <height>300</height>
    </rect>
   </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
   <property name="windowTitle">
-   <string>Pettorine</string>
+   <string>Crediti</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>

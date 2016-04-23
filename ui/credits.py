@@ -12,6 +12,7 @@ class Ui_DialogCredits(object):
     def setupUi(self, DialogCredits):
         DialogCredits.setObjectName("DialogCredits")
         DialogCredits.resize(700, 300)
+        DialogCredits.setAcceptDrops(True)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(DialogCredits)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.groupBox = QtWidgets.QGroupBox(DialogCredits)
@@ -39,6 +40,6 @@ class Ui_DialogCredits(object):
 
     def retranslateUi(self, DialogCredits):
         _translate = QtCore.QCoreApplication.translate
-        DialogCredits.setWindowTitle(_translate("DialogCredits", "Pettorine"))
+        DialogCredits.setWindowTitle(_translate("DialogCredits", "Crediti"))
         self.groupBox.setTitle(_translate("DialogCredits", "Impostazione crediti e concorrenti"))
 
