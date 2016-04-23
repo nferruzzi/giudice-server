@@ -909,22 +909,23 @@ class GaraMainWindow (QMainWindow):
 
     @pyqtSlot()
     def end(self):
+        dlg = QMessageBox.information(self,
+                                      _translate("MainWindow", "Attenzione"),
+                                      _translate("MainWindow", "Concludendo l'esame non saranno accettati piu' voti in ingresso e l'esame verra' considerato concluso alla prova attuale.\n\nProseguire ?"),
+                                      QMessageBox.Yes | QMessageBox.No)
+        if dlg == QMessageBox.No:
+            return
+
         cont = self.warnAdvanceState()
         if cont is False:
             return
-        if cont is None:
-            dlg = QMessageBox.information(self,
-                                          _translate("MainWindow", "Attenzione"),
-                                          _translate("MainWindow", "Concludendo l'esame non saranno accettati piu' voti in ingresso e l'esame verra' considerato concluso alla prova attuale.\n\nProseguire ?"),
-                                          QMessageBox.Yes | QMessageBox.No)
-            cont = dlg == QMessageBox.Yes
-        if cont:
-            if Gara.activeInstance.setEnd(self.connection) == False:
-                # the number of trials has current
-                self.prepareModel()
-                self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count()-1)
-                self.deselect()
-                self.fillTableWithResults(self.tables[-1])
+
+        if Gara.activeInstance.setEnd(self.connection) == False:
+            # the number of trials has current
+            self.prepareModel()
+            self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count()-1)
+            self.deselect()
+            self.fillTableWithResults(self.tables[-1])
 
     @pyqtSlot()
     def serialConfig(self):
@@ -1109,8 +1110,9 @@ if __name__ == '__main__':
         gara = Gara.fromFilename(sys.argv[1])
         Gara.setActiveInstance(gara)
         # gara.generateRapport(gara.getConnection())
-        #resetToTrial(gara.getConnection(), 0)
-        #setState(gara.getConnection(), State_Configure)
+        # resetToTrial(gara.getConnection(), 0)
+        # resetMaxTrials(gara.getConnection(), 4)
+        # setState(gara.getConnection(), State_Configure)
         assert gara == Gara.activeInstance, "not set"
         assert gara.connection, "connection not set"
 
