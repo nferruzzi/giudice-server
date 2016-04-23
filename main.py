@@ -1079,7 +1079,7 @@ class GaraMainWindow (QMainWindow):
             self.showNuovaGara()
 
 if __name__ == '__main__':
-    import sys
+    import sys, math, random
     generate = False
     if generate:
         gara = Gara(nJudges=6,
@@ -1096,14 +1096,13 @@ if __name__ == '__main__':
         gara.setState(c, State_Running)
         for trial in range(0, 4):
             for user in range(100):
-                val = [4, 5, 6, 7, 8, 10]
                 for j in range(1, 6+1):
-                    gara.addRemoteVote(c, judge=j, trial=trial, user=user, user_uuid=str(j), vote=val[j-1])
+                    gara.addRemoteVote(c, judge=j, trial=trial, user=user, user_uuid=str(j), vote=int(random.random()*8.0))
             if trial != 3:
                 gara.advanceToNextTrial(c)
             else:
                 gara.setState(c, State_Configure)
-        gara.saveAs(c, "generato_mediata.gara")
+        gara.saveAs(c, "livigno.esame")
         exit(-1)
     gara = None
     if len(sys.argv) == 2:
