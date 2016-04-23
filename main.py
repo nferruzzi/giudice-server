@@ -259,8 +259,8 @@ class DlgNewGara (QDialog):
 
     def accept(self):
         ng = int(self.ui.numeroGiudici.currentText())
-        if self.ui.radioButton_2.isChecked() and ng <= 3:
-            testo = _translate("MainWindow", "La media mediata richiede almeno 4 giudici")
+        if self.ui.radioButton_2.isChecked() and ng < 3:
+            testo = _translate("MainWindow", "La media mediata richiede almeno 3 giudici")
             dlg = QMessageBox.information(self, "Attenzione",
                                           testo,
                                           QMessageBox.Ok)
@@ -428,7 +428,7 @@ class GaraMainWindow (QMainWindow):
         dlg.show()
 
     def setShowOnDisplay(self, trial, user):
-        g = self.show_on_display.get(trial, {})
+        g = self.show_on_display.setdefault(trial, {})
         g[user] = True
 
     def isShowOnDisplay(self, trial, user):
@@ -637,6 +637,8 @@ class GaraMainWindow (QMainWindow):
         red = False
         for x in range(0, cols):
             item = model.item(row, x)
+            b = QBrush(Qt.black)
+            item.setForeground(b)
             # pettorina
             if x == 0:
                 item.setText(str(row))
@@ -665,7 +667,6 @@ class GaraMainWindow (QMainWindow):
         for x in range(0, cols):
             item = model.item(row, x)
             green = self.isShowOnDisplay(trial, row)
-
             if x == 0:
                 if red:
                     b = QBrush(COLOR_ROW_INCOMPLETE)
@@ -692,7 +693,7 @@ class GaraMainWindow (QMainWindow):
             table.hideRow(row)
 
     def selection(self, a, b, table):
-        if a.row() == -1 and b.row() == -1:
+        if a.row() == -1 or a.column() == -1:
             return
 
         if table == self.tables[-1]:
