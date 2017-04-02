@@ -73,6 +73,11 @@ PRAGMA user_version={};
 """.format(USER_DB_VERSION)
     connection.cursor().execute(cmd)
 
+def version_from_2_to_3(connection):
+    cmd = """ALTER TABLE config ADD COLUMN "maxVote" FLOAT DEFAULT 100.0;
+PRAGMA user_version={};
+""".format(USER_DB_VERSION)
+    connection.cursor().execute(cmd)
 
 def getUserInfo(connection, user):
     query = 'select * from credits where user=?'
@@ -462,8 +467,15 @@ class Gara(QObject):
     def openDB(self):
         with self.lock:
             self.connection = self.getConnection()
-            if checkDBVersion(self.connection) != USER_DB_VERSION:
-                raise Exception("DB not compatible")
+            version = checkDBVersion(self.connection)
+            if version != USER_DB_VERSION:
+                # Let's BUMP
+                if version == 2:
+                    print("Bump DB from 2 to 3")
+                    version_from_2_to_3(self.connection)
+                    version = 3
+                else:            
+                    raise Exception("DB not compatible")
             self._created = True
 
     def createDB(self):
