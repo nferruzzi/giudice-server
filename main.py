@@ -300,6 +300,7 @@ class DlgNewGara (QDialog):
                         nTrials=int(self.ui.prove.currentText()),
                         nUsers=int(self.ui.atleti.text()),
                         average=average,
+                        maxVote=float(self.ui.votoMassimo.text()),
                         filename=filename[0])
             gara.createDB()
             self.parent().setGara(gara)
@@ -499,6 +500,7 @@ class GaraMainWindow (QMainWindow):
         self.ui.nextTrialButton.setEnabled(trial+1 < nt and configuration['state'] == State_Running)
         self.ui.startButton.setEnabled(configuration['state'] == State_Configure)
         self.ui.endButton.setEnabled(configuration['state'] == State_Running)
+        self.ui.maxVote.setText(str(configuration['maxVote']))
 
         medie = {
             Average_Aritmetica: _translate("MainWindow", "aritmetica"),

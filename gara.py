@@ -14,7 +14,7 @@ import apsw
 import csv
 from rapport import generateRapport
 
-USER_DB_VERSION = 2
+USER_DB_VERSION = 3
 MAX_JUDGES = 6
 MAX_TRIALS = 10
 
@@ -51,6 +51,7 @@ date DATE,
 "average" INTEGER,
 "state" INTEGER,
 "uuid" VARCHAR(250),
+"maxVote" FLOAT,
 PRIMARY KEY (id)
 );
 CREATE TABLE credits (
@@ -72,6 +73,11 @@ PRAGMA user_version={};
 """.format(USER_DB_VERSION)
     connection.cursor().execute(cmd)
 
+def version_from_2_to_3(connection):
+    cmd = """ALTER TABLE config ADD COLUMN "maxVote" FLOAT DEFAULT 100.0;
+PRAGMA user_version={};
+""".format(USER_DB_VERSION)
+    connection.cursor().execute(cmd)
 
 def getUserInfo(connection, user):
     query = 'select * from credits where user=?'
@@ -152,11 +158,11 @@ def dateFromSQLite(column):
 
 
 def setConfig(connection,
-              description, date, nJudges, nUsers, nTrials, average, state, uuid):
+              description, date, nJudges, nUsers, nTrials, average, state, uuid, maxVote):
     assert isinstance(date, datetime.date)
     # we want just one conf
-    vals = (1, description, dateToSQLite(date), nJudges, nUsers, nTrials, 0, average, state, uuid)
-    connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", average, state, uuid) values(?,?,?,?,?,?,?,?,?,?)', vals)
+    vals = (1, description, dateToSQLite(date), nJudges, nUsers, nTrials, 0, average, state, uuid, maxVote)
+    connection.cursor().execute('insert into config (id, description, date, "nJudges", "nUsers", "nTrials", "currentTrial", average, state, uuid, maxVote) values(?,?,?,?,?,?,?,?,?,?,?)', vals)
 
 
 def advanceToNextTrial(connection):
@@ -197,6 +203,7 @@ def getConfig(connection):
             'average': v[7],
             'state': v[8],
             'uuid': v[9],
+            'maxVote': v[10],
         }
     return None
 
@@ -410,7 +417,8 @@ class Gara(QObject):
                  nTrials=3,
                  nUsers=5,
                  filename=None,
-                 average=Average_Aritmetica):
+                 average=Average_Aritmetica, 
+                 maxVote=100.0):
         super(QObject, self).__init__()
         self._description = description
         self._nJudges = nJudges
@@ -419,6 +427,7 @@ class Gara(QObject):
         self._nUsers = nUsers
         self._average = average
         self._uuid = QUuid.createUuid().toString()
+        self._maxVote = maxVote
         self.usersUUID = dict()
         self.usersTIME = dict()
         self._created = False
@@ -458,8 +467,15 @@ class Gara(QObject):
     def openDB(self):
         with self.lock:
             self.connection = self.getConnection()
-            if checkDBVersion(self.connection) != USER_DB_VERSION:
-                raise Exception("DB not compatible")
+            version = checkDBVersion(self.connection)
+            if version != USER_DB_VERSION:
+                # Let's BUMP
+                if version == 2:
+                    print("Bump DB from 2 to 3")
+                    version_from_2_to_3(self.connection)
+                    version = 3
+                else:            
+                    raise Exception("DB not compatible")
             self._created = True
 
     def createDB(self):
@@ -482,7 +498,8 @@ class Gara(QObject):
                           nTrials=self._nTrials,
                           average=self._average,
                           state=State_Configure,
-                          uuid=self._uuid)
+                          uuid=self._uuid,
+                          maxVote=self._maxVote)
                 self._created = True
 
     def getConfiguration(self, connection):
@@ -507,6 +524,7 @@ class Gara(QObject):
                 "description": configuration['description'],
                 "state": msgs[configuration['state']],
                 "date": date,
+                "max_vote": configuration['maxVote']
             }
             if self._message is not None:
                 state["message"] = {
@@ -565,7 +583,7 @@ class Gara(QObject):
     def addRemoteVote(self, connection, trial, user, judge, user_uuid, vote):
         with self.lock:
             configuration = self.getConfiguration(connection)
-
+            
             if configuration['state'] != State_Running:
                 return (500, {'code': 0, 'error': 'gara not configured yet'})
 
@@ -575,7 +593,7 @@ class Gara(QObject):
             if not (0 <= user <= configuration['nUsers']):
                 return (403, {'code': 2, 'error': 'User not valid'})
 
-            if not (0 <= vote <= 100.00):
+            if not (0 <= vote <= configuration['maxVote']):
                 return (403, {'code': 3, 'error': 'Vote not valid'})
 
             if not self.validJudge(judge, user_uuid):
@@ -675,7 +693,7 @@ if __name__ == '__main__':
         print("Creating")
         createTableV2(c)
         today = datetime.date.today()
-        setConfig(c, "test", today, 6, 100, 3, 0, 0, "uuid")
+        setConfig(c, "test", today, 6, 100, 3, 0, 0, "uuid", 100)
     print(getConfig(c))
     addVote(c, 0, 1, 1, 6.0)
     addVote(c, 0, 1, 2, 9.0)

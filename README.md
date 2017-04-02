@@ -1,6 +1,7 @@
 ## Giudice gara server
+Per supporto al software contattare l'autore
 
-### Dipendenze:
+### Dipendenze
 - python3 (testato con la 3.5)
 - qt 5.6
 - pyQt
@@ -8,3 +9,7 @@
 
 ### Eseguire i tests
 - `python3 test_gara.py`
+
+### Convertire la UI in file python
+Dal folder `ui`
+- `sh pyuic.sh`

@@ -26,6 +26,11 @@ class GaraBaseTest(unittest.TestCase):
             self.gara.registerJudgeWithUUID(self.connection, x, str(x)*3)
 
     def addVote(self, judge, user, vote, trial=0):
+        v = self.addVoteRaw(judge, user, vote, trial)
+        self.assertEqual(v[0], 200, v)
+        return v
+
+    def addVoteRaw(self, judge, user, vote, trial=0):
         user_uuid = str(judge)*3
         v = self.gara.addRemoteVote(self.connection,
                                     trial=trial,
@@ -33,7 +38,12 @@ class GaraBaseTest(unittest.TestCase):
                                     judge=judge,
                                     user_uuid=user_uuid,
                                     vote=vote)
-        self.assertEqual(v[0], 200, v)
+        return v
+
+    def setGara(self, *args, **kwargs):
+        self.gara = Gara(*args, **kwargs)
+        self.gara.createDB()
+        self.connection = self.gara.connection
 
 
 class BasicFunctionality(GaraBaseTest):
@@ -493,6 +503,27 @@ class BasicFunctionalityUserInfo(GaraBaseTest):
         self.gara.updateUserInfo(self.connection, {1: {-1:'test'}})
         u = self.gara.getUserInfo(self.connection, 1)
         self.assertEqual(u['nickname'], 'test')
+
+
+class BasicGaraConfigurationVote(GaraBaseTest):
+
+    def tearDown(self):
+        self.connection = None
+        self.gara = None
+
+    def test_configuration_maxvote(self):
+        maxVote = 1000.0
+        self.setGara(maxVote=maxVote)
+        self.gara.setState(self.connection, State_Running)
+        self.registerUsers(3)
+        c = self.gara.getConfiguration(self.connection)
+        self.assertEqual(c['maxVote'], maxVote)        
+        v = self.addVoteRaw(judge=1, user=1, vote=0.0)
+        self.assertEqual(v[0], 200)
+        v = self.addVoteRaw(judge=2, user=1, vote=maxVote)
+        self.assertEqual(v[0], 200)
+        v = self.addVoteRaw(judge=3, user=1, vote=maxVote+1)
+        self.assertEqual(v[0], 403)
 
 
 if __name__ == '__main__':
