@@ -500,6 +500,7 @@ class GaraMainWindow (QMainWindow):
         self.ui.nextTrialButton.setEnabled(trial+1 < nt and configuration['state'] == State_Running)
         self.ui.startButton.setEnabled(configuration['state'] == State_Configure)
         self.ui.endButton.setEnabled(configuration['state'] == State_Running)
+        self.ui.maxVote.setText(str(configuration['maxVote']))
 
         medie = {
             Average_Aritmetica: _translate("MainWindow", "aritmetica"),

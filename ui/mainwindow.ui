@@ -145,6 +145,33 @@ border-color: rgb(0, 0, 0);</string>
        </widget>
       </item>
       <item>
+       <widget class="QLabel" name="label_16">
+        <property name="text">
+         <string>Voto massimo</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="maxVote">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(220, 220, 220);
+border-color: rgb(0, 0, 0);</string>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLabel" name="label_12">
         <property name="text">
          <string>Data</string>
