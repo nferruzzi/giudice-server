@@ -300,6 +300,7 @@ class DlgNewGara (QDialog):
                         nTrials=int(self.ui.prove.currentText()),
                         nUsers=int(self.ui.atleti.text()),
                         average=average,
+                        maxVote=float(self.ui.votoMassimo.text()),
                         filename=filename[0])
             gara.createDB()
             self.parent().setGara(gara)
