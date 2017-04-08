@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - max vote, previous default was 100 now it's 10. Bump DB from 2 to 3
 ### Fixed
+- report: dump all users
+- ui: support from 0 to nUsers included
 ### Changed
 
 ## [1.0.1] - 2016-04-24

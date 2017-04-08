@@ -566,7 +566,7 @@ class GaraMainWindow (QMainWindow):
         configuration = gara.getConfiguration(self.connection)
 
         cols = configuration['nJudges'] + 2
-        rows = configuration['nUsers']
+        rows = configuration['nUsers'] + 1
         trials = configuration['nTrials']
 
         def doLabels(trial):
@@ -608,7 +608,7 @@ class GaraMainWindow (QMainWindow):
         gara = Gara.activeInstance
         configuration = gara.getConfiguration(self.connection)
 
-        rows = configuration['nUsers']
+        rows = configuration['nUsers'] + 1
         trials = configuration['nTrials']
 
         labels = [_translate("MainWindow", "Concorrente")]
@@ -1093,11 +1093,11 @@ if __name__ == '__main__':
         c = gara.getConnection()
         for x in range(1, 6+1):
             gara.registerJudgeWithUUID(c, x, str(x))
-        for user in range(0, 100):
+        for user in range(0, 100+1):
             gara.updateUserInfo(c, {user: {-1: 'Mario Rossi'}})
         gara.setState(c, State_Running)
         for trial in range(0, 4):
-            for user in range(100):
+            for user in range(100+1):
                 for j in range(1, 6+1):
                     gara.addRemoteVote(c, judge=j, trial=trial, user=user, user_uuid=str(j), vote=int(random.random()*8.0))
             if trial != 3:

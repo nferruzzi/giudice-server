@@ -43,7 +43,8 @@ def dumpRows(gara, connection, worksheet, generator, conf, resuls_required=True,
         c.border = thin_border
 
     row += 1
-    for user in range(0, conf['nUsers']):
+    users_with_a_vote = gara.getAllUsersWithAVote(connection)
+    for user in users_with_a_vote:
         user_values = gara.getUser(connection, user)
         results = user_values.get('results')
         if resuls_required and results is None:
