@@ -26,6 +26,8 @@ from bottle import ServerAdapter, abort, install
 from urllib.error import HTTPError
 
 VERSION = '1.1.0'
+API_VERSION = '1.0'
+
 webapp = Bottle()
 _translate = QCoreApplication.translate
 
@@ -105,7 +107,7 @@ def keepAlive(judge, connection=None, gara=None):
     #     abort(500, {'error': 'gara not configured yet'})
 
     response = gara.getState(connection)
-    response['version'] = VERSION
+    response['version'] = API_VERSION
 
     ua = request.headers.get('X-User-Auth')
     if ua is None:
