@@ -468,7 +468,9 @@ class GaraMainWindow (QMainWindow):
         configuration = Gara.activeInstance.getConfiguration(self.connection)
         user_data = Gara.activeInstance.getUser(self.connection, user)
         model = self.tables[trial].model()
-        self.updateTableRow(table, trial, user, configuration, user_data)
+        completed = self.updateTableRow(table, trial, user, configuration, user_data)
+        if completed and self.ui.autoShow.isChecked() and self.serialManager != None:
+            self.sendTrialUserToDisplay(trial, user)
 
     @pyqtSlot()
     def updateUI(self):
@@ -482,6 +484,7 @@ class GaraMainWindow (QMainWindow):
             self.ui.actionPettorine,
             self.ui.actionGenera_rapporto,
             self.ui.messageJudges,
+            self.ui.autoShow,
         ]
 
         for btn in mainbuttons:
@@ -726,6 +729,7 @@ class GaraMainWindow (QMainWindow):
             table.showRow(row)
         else:
             table.hideRow(row)
+        return not red
 
     def selection(self, a, b, table):
         if a.row() == -1 or a.column() == -1:
@@ -1062,21 +1066,25 @@ class GaraMainWindow (QMainWindow):
         if self.serialManager == None:
             QMessageBox.critical(self, "Errore", _translate("MainWindow", "Il display non risulta collegato"), QMessageBox.Ok)
             return
-        user = Gara.activeInstance.getUser(self.connection, self.selected_user)
-        score_bonus = user['trials'][self.selected_trial]['score_bonus'] or 0.0
-        average_bonus = user['trials'][self.selected_trial]['average_bonus'] or 0.0
+        self.sendTrialUserToDisplay(self.selected_trial, self.selected_user)
+
+    def sendTrialUserToDisplay(self, selected_trial, selected_user):
+        user = Gara.activeInstance.getUser(self.connection, selected_user)
+        score_bonus = user['trials'][selected_trial]['score_bonus'] or 0.0
+        average_bonus = user['trials'][selected_trial]['average_bonus'] or 0.0
         lines = []
-        lines.append('C{:03d} '.format(self.selected_user))
+        lines.append('C{:03d} '.format(selected_user))
         lines.append('P{:02.02f} '.format(score_bonus))
-        if self.selected_trial != 0:
+        if selected_trial != 0:
             lines.append('M{:02.02f} '.format(average_bonus))
-        self.serialManager.writeMultipleStrings(lines)
-        self.setShowOnDisplay(self.selected_trial, self.selected_user)
-        for t in [self.tables[self.selected_trial], self.tables[-1]]:
+        if self.serialManager != None:
+            self.serialManager.writeMultipleStrings(lines)
+        self.setShowOnDisplay(selected_trial, selected_user)
+        for t in [self.tables[selected_trial], self.tables[-1]]:
             model = t.model()
             cols = model.columnCount()
             for x in range(1, cols+1):
-                item = model.item(self.selected_user, x)
+                item = model.item(selected_user, x)
                 if item is not None:
                     b = QBrush(COLOR_ROW_DISPLAY)
                     item.setForeground(b)
@@ -1097,9 +1105,10 @@ class GaraMainWindow (QMainWindow):
                 q.setValue("preference/font_size", v)
                 self.updateUI()
                 self.prepareModel()
-                configuration = gara.getConfiguration(self.connection)
-                if configuration['state'] == State_Completed:
-                    self.fillTableWithResults(self.tables[-1])
+                if gara != None:
+                    configuration = gara.getConfiguration(self.connection)
+                    if configuration['state'] == State_Completed:
+                        self.fillTableWithResults(self.tables[-1])
 
     def __init__(self):
         QMainWindow.__init__(self)

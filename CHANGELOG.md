@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - max vote, previous default was 100 now it's 10. Bump DB from 2 to 3
 - alt plus: increase font
 - alt minus: decrease font
+- auto send votes to display
 
 ### Fixed
 - report: dump all users

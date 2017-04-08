@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(840, 652)
+        MainWindow.resize(843, 818)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -162,6 +162,10 @@ class Ui_MainWindow(object):
         self.sendToDisplay = QtWidgets.QPushButton(self.groupBox)
         self.sendToDisplay.setObjectName("sendToDisplay")
         self.verticalLayout.addWidget(self.sendToDisplay)
+        self.autoShow = QtWidgets.QCheckBox(self.groupBox)
+        self.autoShow.setChecked(True)
+        self.autoShow.setObjectName("autoShow")
+        self.verticalLayout.addWidget(self.autoShow)
         self.deselectRow = QtWidgets.QPushButton(self.groupBox)
         self.deselectRow.setObjectName("deselectRow")
         self.verticalLayout.addWidget(self.deselectRow)
@@ -250,7 +254,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addLayout(self.horizontalLayout_4)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 840, 22))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 843, 22))
         self.menubar.setObjectName("menubar")
         self.menuGare = QtWidgets.QMenu(self.menubar)
         self.menuGare.setObjectName("menuGare")
@@ -325,6 +329,7 @@ class Ui_MainWindow(object):
         self.retryTrial.setToolTip(_translate("MainWindow", "Vengono resettati i giudizi per la pettorina selezionata nella prova selezionata"))
         self.retryTrial.setText(_translate("MainWindow", "Riprova..."))
         self.sendToDisplay.setText(_translate("MainWindow", "Mostra sul display"))
+        self.autoShow.setText(_translate("MainWindow", "Mostra automaticamente"))
         self.deselectRow.setText(_translate("MainWindow", "Deseleziona"))
         self.label_6.setText(_translate("MainWindow", "Punteggio\n"
 "prova"))
