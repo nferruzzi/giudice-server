@@ -25,7 +25,7 @@ from bottle import Bottle, run, get, post, request
 from bottle import ServerAdapter, abort, install
 from urllib.error import HTTPError
 
-VERSION = '1.0'
+VERSION = '1.1.0'
 webapp = Bottle()
 _translate = QCoreApplication.translate
 
@@ -487,7 +487,7 @@ class GaraMainWindow (QMainWindow):
 
         if gara is None:
             self.deselect()
-            self.setWindowTitle(_translate("MainWindow", "Giudice v1.0 - non configurato"))
+            self.setWindowTitle(_translate("MainWindow", "Giudice v{} - non configurato".format(VERSION)))
             addrs = QNetworkInterface.allAddresses()
             show = []
             for h in addrs:
@@ -502,7 +502,7 @@ class GaraMainWindow (QMainWindow):
         trial = configuration['currentTrial']
         nt = configuration['nTrials']
 
-        self.setWindowTitle(_translate("MainWindow", "Giudice v1.0 - {} (autosalvataggio)".format(gara.filename)))
+        self.setWindowTitle(_translate("MainWindow", "Giudice v{} - {} (autosalvataggio)".format(VERSION, gara.filename)))
         self.ui.description.setText(configuration['description'])
         self.ui.nextTrialButton.setEnabled(trial+1 < nt and configuration['state'] == State_Running)
         self.ui.startButton.setEnabled(configuration['state'] == State_Configure)
