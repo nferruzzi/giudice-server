@@ -355,12 +355,19 @@ class DlgConfigCredits (QDialog):
         for h in range(1, len(self.ui.tableView.horizontalHeader())):
             self.ui.tableView.horizontalHeader().setSectionResizeMode(h, QHeaderView.Stretch)
 
+        font_size = QSettings().value("preference/font_size", 0)
+        
         for y in range(0, self.rows):
             user = Gara.activeInstance.getUserInfo(self.connection, y)
             for x in range(0, self.cols):
                 item = QStandardItem("")
                 item.setSelectable(True)
                 self.model.setItem(y, x, item)
+
+                g = item.font()
+                g.setPointSize(g.pointSize() + font_size)
+                item.setFont(g)
+
                 if x == 0:
                     item.setEditable(False)
                     g = item.font()
@@ -548,6 +555,15 @@ class GaraMainWindow (QMainWindow):
         model = QStandardItemModel(rows, cols)
         model.setHorizontalHeaderLabels(labels)
 
+        font_size = QSettings().value("preference/font_size", 0)
+
+        hv = QHeaderView(Qt.Horizontal)
+        g = hv.font()
+        g.setPointSize(g.pointSize() + font_size)
+        hv.setFont(g)
+
+        tv.setHorizontalHeader(hv)
+
         tv.setModel(model)
         tv.setSelectionBehavior(QAbstractItemView.SelectRows)
         tv.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -581,6 +597,8 @@ class GaraMainWindow (QMainWindow):
         tables = []
         models = []
 
+        font_size = QSettings().value("preference/font_size", 0)
+
         self.ui.tabWidget.clear()
         for i in range(trials):
             labels = doLabels(i)
@@ -597,6 +615,9 @@ class GaraMainWindow (QMainWindow):
                     item = QStandardItem("")
                     item.setEditable(False)
                     item.setSelectable(True)
+                    g = item.font()
+                    g.setPointSize(g.pointSize() + font_size)
+                    item.setFont(g)
                     models[trial].setItem(y, x, item)
                 self.updateTableRow(tables[trial], trial, y, configuration, user)
 
@@ -620,11 +641,15 @@ class GaraMainWindow (QMainWindow):
         cols = len(labels)
         tv, model = self.createTableAndModel(rows, cols, labels)
         self.tables.append(tv)
+        font_size = QSettings().value("preference/font_size", 0)
         for y in range(0, rows+1):
             for x in range(0, cols):
                 item = QStandardItem("")
                 item.setEditable(False)
                 item.setSelectable(True)
+                g = item.font()
+                g.setPointSize(g.pointSize() + font_size)
+                item.setFont(g)
                 model.setItem(y, x, item)
             tv.hideRow(y)
 
@@ -637,10 +662,16 @@ class GaraMainWindow (QMainWindow):
         cols = model.columnCount()
         jn = configuration['nJudges']
         red = False
+        font_size = QSettings().value("preference/font_size", 0)
         for x in range(0, cols):
             item = model.item(row, x)
             b = QBrush(Qt.black)
             item.setForeground(b)
+
+            g = item.font()
+            g.setPointSize(g.pointSize() + font_size)
+            item.setFont(g)
+
             # pettorina
             if x == 0:
                 item.setText(str(row))
@@ -1048,6 +1079,25 @@ class GaraMainWindow (QMainWindow):
                     b = QBrush(COLOR_ROW_DISPLAY)
                     item.setForeground(b)
 
+    @pyqtSlot()
+    def keyPressEvent(self, event):
+        if event.modifiers() & Qt.AltModifier:
+            q = QSettings()
+            v = q.value("preference/font_size", 0)
+            o = v
+            if event.key() == Qt.Key_Plus:
+                v = v + 2
+            if event.key() == Qt.Key_Minus:
+                v = v - 2
+            v = max(-4, v)
+            v = min(10, v)
+            if v != o:
+                q.setValue("preference/font_size", v)
+                self.updateUI()
+                self.prepareModel()
+                configuration = gara.getConfiguration(self.connection)
+                if configuration['state'] == State_Completed:
+                    self.fillTableWithResults(self.tables[-1])
 
     def __init__(self):
         QMainWindow.__init__(self)
