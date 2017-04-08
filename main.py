@@ -1084,8 +1084,9 @@ if __name__ == '__main__':
     import sys, math, random
     generate = False
     if generate:
+        nUsers = 300
         gara = Gara(nJudges=6,
-                    nUsers=100,
+                    nUsers=nUsers,
                     nTrials=4,
                     description="Gara di aritmetica",
                     average=Average_Mediata,)
@@ -1093,11 +1094,11 @@ if __name__ == '__main__':
         c = gara.getConnection()
         for x in range(1, 6+1):
             gara.registerJudgeWithUUID(c, x, str(x))
-        for user in range(0, 100+1):
+        for user in range(0, nUsers+1):
             gara.updateUserInfo(c, {user: {-1: 'Mario Rossi'}})
         gara.setState(c, State_Running)
         for trial in range(0, 4):
-            for user in range(100+1):
+            for user in range(nUsers+1):
                 for j in range(1, 6+1):
                     gara.addRemoteVote(c, judge=j, trial=trial, user=user, user_uuid=str(j), vote=int(random.random()*8.0))
             if trial != 3:
