@@ -250,7 +250,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addLayout(self.horizontalLayout_4)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 843, 22))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 840, 22))
         self.menubar.setObjectName("menubar")
         self.menuGare = QtWidgets.QMenu(self.menubar)
         self.menuGare.setObjectName("menuGare")

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - report trials: replace min and max values with '-'
+- increase trials limit to 10
 
 ## [1.0.1] - 2016-04-24
 ### First public release
