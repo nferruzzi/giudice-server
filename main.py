@@ -673,10 +673,6 @@ class GaraMainWindow (QMainWindow):
             b = QBrush(Qt.black)
             item.setForeground(b)
 
-            g = item.font()
-            g.setPointSize(g.pointSize() + font_size)
-            item.setFont(g)
-
             # pettorina
             if x == 0:
                 item.setText(str(row))
