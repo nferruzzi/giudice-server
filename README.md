@@ -6,6 +6,8 @@ Per supporto al software contattare l'autore
 - qt 5.6
 - pyQt
 - py Bottle v0.12
+- pyinstaller 3.1.1 (windows)
+- InstallSimple 2.9 (windows)
 
 ### Eseguire i tests
 - `python3 test_gara.py`
@@ -13,3 +15,7 @@ Per supporto al software contattare l'autore
 ### Convertire la UI in file python
 Dal folder `ui`
 - `sh pyuic.sh`
+
+### Buildare su windows ###
+- `pyinstaller main.spec`
+- `installer.spro`
