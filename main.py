@@ -25,7 +25,9 @@ from bottle import Bottle, run, get, post, request
 from bottle import ServerAdapter, abort, install
 from urllib.error import HTTPError
 
-VERSION = '1.0'
+VERSION = '1.1.0'
+API_VERSION = '1.0'
+
 webapp = Bottle()
 _translate = QCoreApplication.translate
 
@@ -105,7 +107,7 @@ def keepAlive(judge, connection=None, gara=None):
     #     abort(500, {'error': 'gara not configured yet'})
 
     response = gara.getState(connection)
-    response['version'] = VERSION
+    response['version'] = API_VERSION
 
     ua = request.headers.get('X-User-Auth')
     if ua is None:
@@ -355,12 +357,19 @@ class DlgConfigCredits (QDialog):
         for h in range(1, len(self.ui.tableView.horizontalHeader())):
             self.ui.tableView.horizontalHeader().setSectionResizeMode(h, QHeaderView.Stretch)
 
+        font_size = QSettings().value("preference/font_size", 0)
+        
         for y in range(0, self.rows):
             user = Gara.activeInstance.getUserInfo(self.connection, y)
             for x in range(0, self.cols):
                 item = QStandardItem("")
                 item.setSelectable(True)
                 self.model.setItem(y, x, item)
+
+                g = item.font()
+                g.setPointSize(g.pointSize() + font_size)
+                item.setFont(g)
+
                 if x == 0:
                     item.setEditable(False)
                     g = item.font()
@@ -459,7 +468,9 @@ class GaraMainWindow (QMainWindow):
         configuration = Gara.activeInstance.getConfiguration(self.connection)
         user_data = Gara.activeInstance.getUser(self.connection, user)
         model = self.tables[trial].model()
-        self.updateTableRow(table, trial, user, configuration, user_data)
+        completed = self.updateTableRow(table, trial, user, configuration, user_data)
+        if completed and self.ui.autoShow.isChecked() and self.serialManager != None:
+            self.sendTrialUserToDisplay(trial, user)
 
     @pyqtSlot()
     def updateUI(self):
@@ -473,6 +484,7 @@ class GaraMainWindow (QMainWindow):
             self.ui.actionPettorine,
             self.ui.actionGenera_rapporto,
             self.ui.messageJudges,
+            self.ui.autoShow,
         ]
 
         for btn in mainbuttons:
@@ -480,7 +492,7 @@ class GaraMainWindow (QMainWindow):
 
         if gara is None:
             self.deselect()
-            self.setWindowTitle(_translate("MainWindow", "Giudice v1.0 - non configurato"))
+            self.setWindowTitle(_translate("MainWindow", "Giudice v{} - non configurato".format(VERSION)))
             addrs = QNetworkInterface.allAddresses()
             show = []
             for h in addrs:
@@ -495,7 +507,7 @@ class GaraMainWindow (QMainWindow):
         trial = configuration['currentTrial']
         nt = configuration['nTrials']
 
-        self.setWindowTitle(_translate("MainWindow", "Giudice v1.0 - {} (autosalvataggio)".format(gara.filename)))
+        self.setWindowTitle(_translate("MainWindow", "Giudice v{} - {} (autosalvataggio)".format(VERSION, gara.filename)))
         self.ui.description.setText(configuration['description'])
         self.ui.nextTrialButton.setEnabled(trial+1 < nt and configuration['state'] == State_Running)
         self.ui.startButton.setEnabled(configuration['state'] == State_Configure)
@@ -548,6 +560,15 @@ class GaraMainWindow (QMainWindow):
         model = QStandardItemModel(rows, cols)
         model.setHorizontalHeaderLabels(labels)
 
+        font_size = QSettings().value("preference/font_size", 0)
+
+        hv = QHeaderView(Qt.Horizontal)
+        g = hv.font()
+        g.setPointSize(g.pointSize() + font_size)
+        hv.setFont(g)
+
+        tv.setHorizontalHeader(hv)
+
         tv.setModel(model)
         tv.setSelectionBehavior(QAbstractItemView.SelectRows)
         tv.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -566,7 +587,7 @@ class GaraMainWindow (QMainWindow):
         configuration = gara.getConfiguration(self.connection)
 
         cols = configuration['nJudges'] + 2
-        rows = configuration['nUsers']
+        rows = configuration['nUsers'] + 1
         trials = configuration['nTrials']
 
         def doLabels(trial):
@@ -580,6 +601,8 @@ class GaraMainWindow (QMainWindow):
             return labels
         tables = []
         models = []
+
+        font_size = QSettings().value("preference/font_size", 0)
 
         self.ui.tabWidget.clear()
         for i in range(trials):
@@ -597,6 +620,9 @@ class GaraMainWindow (QMainWindow):
                     item = QStandardItem("")
                     item.setEditable(False)
                     item.setSelectable(True)
+                    g = item.font()
+                    g.setPointSize(g.pointSize() + font_size)
+                    item.setFont(g)
                     models[trial].setItem(y, x, item)
                 self.updateTableRow(tables[trial], trial, y, configuration, user)
 
@@ -608,7 +634,7 @@ class GaraMainWindow (QMainWindow):
         gara = Gara.activeInstance
         configuration = gara.getConfiguration(self.connection)
 
-        rows = configuration['nUsers']
+        rows = configuration['nUsers'] + 1
         trials = configuration['nTrials']
 
         labels = [_translate("MainWindow", "Concorrente")]
@@ -620,11 +646,15 @@ class GaraMainWindow (QMainWindow):
         cols = len(labels)
         tv, model = self.createTableAndModel(rows, cols, labels)
         self.tables.append(tv)
+        font_size = QSettings().value("preference/font_size", 0)
         for y in range(0, rows+1):
             for x in range(0, cols):
                 item = QStandardItem("")
                 item.setEditable(False)
                 item.setSelectable(True)
+                g = item.font()
+                g.setPointSize(g.pointSize() + font_size)
+                item.setFont(g)
                 model.setItem(y, x, item)
             tv.hideRow(y)
 
@@ -637,10 +667,12 @@ class GaraMainWindow (QMainWindow):
         cols = model.columnCount()
         jn = configuration['nJudges']
         red = False
+        font_size = QSettings().value("preference/font_size", 0)
         for x in range(0, cols):
             item = model.item(row, x)
             b = QBrush(Qt.black)
             item.setForeground(b)
+
             # pettorina
             if x == 0:
                 item.setText(str(row))
@@ -693,6 +725,7 @@ class GaraMainWindow (QMainWindow):
             table.showRow(row)
         else:
             table.hideRow(row)
+        return not red
 
     def selection(self, a, b, table):
         if a.row() == -1 or a.column() == -1:
@@ -1029,25 +1062,49 @@ class GaraMainWindow (QMainWindow):
         if self.serialManager == None:
             QMessageBox.critical(self, "Errore", _translate("MainWindow", "Il display non risulta collegato"), QMessageBox.Ok)
             return
-        user = Gara.activeInstance.getUser(self.connection, self.selected_user)
-        score_bonus = user['trials'][self.selected_trial]['score_bonus'] or 0.0
-        average_bonus = user['trials'][self.selected_trial]['average_bonus'] or 0.0
+        self.sendTrialUserToDisplay(self.selected_trial, self.selected_user)
+
+    def sendTrialUserToDisplay(self, selected_trial, selected_user):
+        user = Gara.activeInstance.getUser(self.connection, selected_user)
+        score_bonus = user['trials'][selected_trial]['score_bonus'] or 0.0
+        average_bonus = user['trials'][selected_trial]['average_bonus'] or 0.0
         lines = []
-        lines.append('C{:03d} '.format(self.selected_user))
+        lines.append('C{:03d} '.format(selected_user))
         lines.append('P{:02.02f} '.format(score_bonus))
-        if self.selected_trial != 0:
+        if selected_trial != 0:
             lines.append('M{:02.02f} '.format(average_bonus))
-        self.serialManager.writeMultipleStrings(lines)
-        self.setShowOnDisplay(self.selected_trial, self.selected_user)
-        for t in [self.tables[self.selected_trial], self.tables[-1]]:
+        if self.serialManager != None:
+            self.serialManager.writeMultipleStrings(lines)
+        self.setShowOnDisplay(selected_trial, selected_user)
+        for t in [self.tables[selected_trial], self.tables[-1]]:
             model = t.model()
             cols = model.columnCount()
             for x in range(1, cols+1):
-                item = model.item(self.selected_user, x)
+                item = model.item(selected_user, x)
                 if item is not None:
                     b = QBrush(COLOR_ROW_DISPLAY)
                     item.setForeground(b)
 
+    @pyqtSlot()
+    def keyPressEvent(self, event):
+        if event.modifiers() & Qt.AltModifier:
+            q = QSettings()
+            v = q.value("preference/font_size", 0)
+            o = v
+            if event.key() == Qt.Key_Plus:
+                v = v + 2
+            if event.key() == Qt.Key_Minus:
+                v = v - 2
+            v = max(-4, v)
+            v = min(10, v)
+            if v != o:
+                q.setValue("preference/font_size", v)
+                self.updateUI()
+                self.prepareModel()
+                if gara != None:
+                    configuration = gara.getConfiguration(self.connection)
+                    if configuration['state'] == State_Completed:
+                        self.fillTableWithResults(self.tables[-1])
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -1084,8 +1141,9 @@ if __name__ == '__main__':
     import sys, math, random
     generate = False
     if generate:
+        nUsers = 300
         gara = Gara(nJudges=6,
-                    nUsers=100,
+                    nUsers=nUsers,
                     nTrials=4,
                     description="Gara di aritmetica",
                     average=Average_Mediata,)
@@ -1093,11 +1151,11 @@ if __name__ == '__main__':
         c = gara.getConnection()
         for x in range(1, 6+1):
             gara.registerJudgeWithUUID(c, x, str(x))
-        for user in range(0, 100):
+        for user in range(0, nUsers+1):
             gara.updateUserInfo(c, {user: {-1: 'Mario Rossi'}})
         gara.setState(c, State_Running)
         for trial in range(0, 4):
-            for user in range(100):
+            for user in range(nUsers+1):
                 for j in range(1, 6+1):
                     gara.addRemoteVote(c, judge=j, trial=trial, user=user, user_uuid=str(j), vote=int(random.random()*8.0))
             if trial != 3:

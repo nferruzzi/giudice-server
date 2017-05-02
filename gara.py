@@ -399,6 +399,14 @@ def countIncomplete(connection, trial):
     return res
 
 
+def getAllUsersWithAVote(connection):
+    query = 'select distinct user from users order by user asc;'
+    res = []
+    for v in connection.cursor().execute(query):
+        res.append(v[0])
+    return res
+
+
 class Gara(QObject):
 
     DONOT_ALLOW_DUPLICATE_JUDGES = True
@@ -655,6 +663,10 @@ class Gara(QObject):
     def getUserInfo(self, connection, user):
         with self.lock:
             return getUserInfo(connection, user)
+
+    def getAllUsersWithAVote(self, connection):
+        with self.lock:
+            return getAllUsersWithAVote(connection)
 
     def generateRapport(self, connection, filename='demo2.xlsx'):
         generateRapport(self, connection, filename)

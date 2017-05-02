@@ -9,7 +9,6 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Fill, Alignment
 from openpyxl.styles import PatternFill, Border, Side, Protection
 
-
 def baseGen():
     return [
         ('N° pett.', lambda n, user_values, user_info: n),
@@ -43,7 +42,8 @@ def dumpRows(gara, connection, worksheet, generator, conf, resuls_required=True,
         c.border = thin_border
 
     row += 1
-    for user in range(0, conf['nUsers']):
+    users_with_a_vote = gara.getAllUsersWithAVote(connection)
+    for user in users_with_a_vote:
         user_values = gara.getUser(connection, user)
         results = user_values.get('results')
         if resuls_required and results is None:
@@ -124,7 +124,19 @@ def generateRapport(gara, connection, filename):
         generator = baseGen()
 
         for j in range(1, conf['nJudges']+1):
-            v = ('Giudice {}'.format(j), lambda n, user_values, user_info, trial=t, judge=j: user_values['trials'][trial]['votes'][judge] or '')
+            # Dump values as is
+            def aritmetica(n, user_values, user_info, trial=t, judge=j):
+                return user_values['trials'][trial]['votes'][judge] or ''
+            # Remove first min and first max
+            def mediata(n, user_values, user_info, trial=t, judge=j):
+                v = dict(user_values['trials'][trial]['votes'])
+                imax = max(v, key=v.get)
+                imin = min(v, key=v.get)
+                v[imax] = '-'
+                v[imin] = '-'
+                return v[judge]
+
+            v = ('Giudice {}'.format(j), aritmetica if conf['average'] == 0 else mediata)
             generator.append(v)
 
         generator.append(('Punteggio', lambda n, user_values, user_info, trial=t: user_values['trials'][trial]['score'] or 0.0))

@@ -1,7 +1,7 @@
 ; InstallSimple project
 
 [Setup]
-WindowTitle=Installazione Giudice v1.0
+WindowTitle=Installazione Giudice v1.1
 ProductName=Giudice, automazione voti per giudici esaminatori
 
 [Graphics]
@@ -14,7 +14,7 @@ WizardBitmap=
 WizardFontColor=0
 
 [FirstMessage]
-Giudice Copyright (C) 2016 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
+Giudice Copyright (C) 2016 2017 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
 sviluppato per 
 RC Radiocomunicazioni - http://www.rcradiocom.it
 
@@ -657,7 +657,6 @@ Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
 
  END OF TERMS AND CONDITIONS
-
 
 [SetupFiles]
 SourceFolder=Z:\server\dist\main
