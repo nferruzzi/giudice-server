@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/0.3.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+
+## [1.1.0] - 2017-04-19
 ### Added
 - max vote, previous default was 100 now it's 10. Bump DB from 2 to 3
 - alt plus: increase font
