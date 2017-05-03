@@ -668,8 +668,8 @@ class Gara(QObject):
         with self.lock:
             return getAllUsersWithAVote(connection)
 
-    def generateRapport(self, connection, filename='demo2.xlsx'):
-        generateRapport(self, connection, filename)
+    def generateRapport(self, connection, filename='demo2.xlsx', include=True):
+        generateRapport(self, connection, filename, include)
 
     def setEnd(self, connection):
         with self.lock:
