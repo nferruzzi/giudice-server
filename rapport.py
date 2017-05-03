@@ -102,7 +102,7 @@ def dumpRows(gara, connection, worksheet, generator, conf, resuls_required=True,
     worksheet.add_print_title(4, rows_or_cols='rows')
 
 
-def generateRapport(gara, connection, filename):
+def generateRapport(gara, connection, filename, include):
     conf = gara.getConfiguration(connection)
     workbook = Workbook()
 
@@ -126,7 +126,8 @@ def generateRapport(gara, connection, filename):
         for j in range(1, conf['nJudges']+1):
             # Dump values as is
             def aritmetica(n, user_values, user_info, trial=t, judge=j):
-                return user_values['trials'][trial]['votes'][judge] or ''
+                return user_values['trials'][trial]['votes'][judge]
+
             # Remove first min and first max
             def mediata(n, user_values, user_info, trial=t, judge=j):
                 v = dict(user_values['trials'][trial]['votes'])
@@ -136,7 +137,7 @@ def generateRapport(gara, connection, filename):
                 v[imin] = '-'
                 return v[judge]
 
-            v = ('Giudice {}'.format(j), aritmetica if conf['average'] == 0 else mediata)
+            v = ('Giudice {}'.format(j), aritmetica if (conf['average'] == 0 or include) else mediata)
             generator.append(v)
 
         generator.append(('Punteggio', lambda n, user_values, user_info, trial=t: user_values['trials'][trial]['score'] or 0.0))

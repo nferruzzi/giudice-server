@@ -25,7 +25,7 @@ from bottle import Bottle, run, get, post, request
 from bottle import ServerAdapter, abort, install
 from urllib.error import HTTPError
 
-VERSION = '1.1.0'
+VERSION = '1.1.1'
 API_VERSION = '1.0'
 
 webapp = Bottle()
@@ -1006,8 +1006,20 @@ class GaraMainWindow (QMainWindow):
 
     @pyqtSlot()
     def generaRapporto(self):
-        if Gara.activeInstance is None:
+        gara = Gara.activeInstance
+
+        if gara is None:
             return
+
+        configuration = gara.getConfiguration(self.connection)
+        include = True
+
+        if configuration['average'] == Average_Mediata:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Question)
+            msg.setText(_translate("MainWindow", "Mostrare il voto minimo e massimo ?"))
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            include = True if msg.exec_() == QMessageBox.Yes else False
 
         where = QStandardPaths.DocumentsLocation
         dd = QStandardPaths.writableLocation(where)
@@ -1016,9 +1028,8 @@ class GaraMainWindow (QMainWindow):
                                                dd,
                                                _translate("MainWindow", "Excel XLSX(*.xlsx)"))
 
-        if filename != None and filename[0] != '':
-            gara = Gara.activeInstance
-            gara.generateRapport(self.connection, filename[0])
+        if filename != None and filename[0] != '':            
+            gara.generateRapport(self.connection, filename[0], include)
             QMessageBox.information(self, "", _translate("MainWindow", "Rapporto generato"), QMessageBox.Ok)
 
     @pyqtSlot()

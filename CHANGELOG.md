@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [1.1.1] - 2017-05-04
+### Added
+- report: ask to include for min/max vote
+
 ## [1.1.0] - 2017-04-19
 ### Added
 - max vote, previous default was 100 now it's 10. Bump DB from 2 to 3
