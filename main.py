@@ -1045,7 +1045,7 @@ class GaraMainWindow (QMainWindow):
             q = QSettings()
             v = q.value("serial/name", None)
             if v != None:
-                self.serialManager = SerialManager(self, v)
+                self.serialManager = SerialManager(self, v, True)
                 r = self.serialManager.connectTo()
                 if r == False:
                     self.serialManager = None

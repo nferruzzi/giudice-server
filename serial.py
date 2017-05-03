@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 GaraServer
-Copyright 2016 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
+Copyright 2016/2017 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
 License: GPLv3 (see LICENSE)
 """
 import sys
@@ -19,9 +19,10 @@ class SerialManager(QObject):
 
     serial_disconnected = pyqtSignal(name='serialDisconnected')
 
-    def __init__(self, parent, portname):
+    def __init__(self, parent, portname, simulate):
         super().__init__(parent)
         self.portname = portname
+        self.simulate = simulate
 
     def connectTo(self):
         self.serial = QSerialPort(self)
@@ -34,7 +35,7 @@ class SerialManager(QObject):
         # self.serial.readyRead.connect(self.readData)
         # self.serial.readChannelFinished.connect(self.endReadData)
         # self.serial.setFlowControl(QSerialPort.HardwareControl)
-        if self.serial.open(QIODevice.ReadWrite):
+        if self.simulate or self.serial.open(QIODevice.ReadWrite):
             QMessageBox.information(None, "Ok", "Display collegato")
         else:
             QMessageBox.critical(None, "Error", self.serial.errorString())
@@ -60,6 +61,7 @@ class SerialManager(QObject):
                 self.index += 1
 
     def resetTimer(self):
+        print('resetted')
         self.lines = []
         self.currentTime = None
 
@@ -71,6 +73,10 @@ class SerialManager(QObject):
                 self.currentTime = current_time
 
     def writeString(self, string):
+        if self.simulate:
+            self.parent().ui.displayPreview.setText(string)
+            return
+
         code = bytearray([0x04, 0x07, 0x30, 0x30, 0x18, 0x09])
         text = bytearray(string, 'ascii')
         end = bytearray([0x12])
