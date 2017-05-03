@@ -25,7 +25,7 @@ from bottle import Bottle, run, get, post, request
 from bottle import ServerAdapter, abort, install
 from urllib.error import HTTPError
 
-VERSION = '1.1.0'
+VERSION = '1.1.1'
 API_VERSION = '1.0'
 
 webapp = Bottle()

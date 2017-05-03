@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/0.3.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+
+## [1.1.1] - 2017-05-04
 ### Added
 - report: ask to include for min/max vote
 
