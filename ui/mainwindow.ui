@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>843</width>
-    <height>818</height>
+    <height>845</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -248,6 +248,20 @@ color: rgb(255, 0, 0);</string>
         </property>
         <property name="readOnly">
          <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="convertResultsToThousands">
+        <property name="text">
+         <string>Mostra in millesimi</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="Line" name="line_3">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
         </property>
        </widget>
       </item>

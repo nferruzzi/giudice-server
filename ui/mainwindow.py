@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.5.1
+# Created by: PyQt5 UI code generator 5.6
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(843, 818)
+        MainWindow.resize(843, 845)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -117,6 +117,14 @@ class Ui_MainWindow(object):
         self.displayPreview.setReadOnly(True)
         self.displayPreview.setObjectName("displayPreview")
         self.horizontalLayout_3.addWidget(self.displayPreview)
+        self.convertResultsToThousands = QtWidgets.QCheckBox(self.centralwidget)
+        self.convertResultsToThousands.setObjectName("convertResultsToThousands")
+        self.horizontalLayout_3.addWidget(self.convertResultsToThousands)
+        self.line_3 = QtWidgets.QFrame(self.centralwidget)
+        self.line_3.setFrameShape(QtWidgets.QFrame.VLine)
+        self.line_3.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line_3.setObjectName("line_3")
+        self.horizontalLayout_3.addWidget(self.line_3)
         self.connectDisplay = QtWidgets.QPushButton(self.centralwidget)
         self.connectDisplay.setObjectName("connectDisplay")
         self.horizontalLayout_3.addWidget(self.connectDisplay)
@@ -322,6 +330,7 @@ class Ui_MainWindow(object):
         self.label_12.setText(_translate("MainWindow", "Data"))
         self.label_9.setText(_translate("MainWindow", "Media"))
         self.label_5.setText(_translate("MainWindow", "Testo sul display"))
+        self.convertResultsToThousands.setText(_translate("MainWindow", "Mostra in millesimi"))
         self.connectDisplay.setText(_translate("MainWindow", "Collega display"))
         self.groupBox.setTitle(_translate("MainWindow", "Concorrente selezionato"))
         self.label_4.setText(_translate("MainWindow", "Numero"))

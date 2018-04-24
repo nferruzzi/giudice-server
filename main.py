@@ -1080,10 +1080,21 @@ class GaraMainWindow (QMainWindow):
         score_bonus = user['trials'][selected_trial]['score_bonus'] or 0.0
         average_bonus = user['trials'][selected_trial]['average_bonus'] or 0.0
         lines = []
+        
+        # convert 10.00 to 1000
+        if self.ui.convertResultsToThousands.isChecked():
+            score_bonus *= 100
+            average_bonus *= 100
+            score_bonus = int(score_bonus)
+            average_bonus = int(average_bonus)
+            format = '{:04d}'
+        else:
+            format = '{:02.02f}'
+
         lines.append('C{:03d} '.format(selected_user))
-        lines.append('P{:02.02f} '.format(score_bonus))
+        lines.append('P' + format.format(score_bonus))
         if selected_trial != 0:
-            lines.append('M{:02.02f} '.format(average_bonus))
+            lines.append('M' + format.format(average_bonus))
         if self.serialManager != None:
             self.serialManager.writeMultipleStrings(lines)
         self.setShowOnDisplay(selected_trial, selected_user)

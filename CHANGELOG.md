@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/0.3.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+### Added
+- option to display converted results from 0..1 to 0..1000
 
 ## [1.1.1] - 2017-05-04
 ### Added
