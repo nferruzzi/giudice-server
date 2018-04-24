@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [1.1.2] - 2018-04-24
+### Added
+- option to display converted results from 0..1 to 0..1000
+
 ## [1.1.1] - 2017-05-04
 ### Added
 - report: ask to include for min/max vote

@@ -1,7 +1,7 @@
 ; InstallSimple project
 
 [Setup]
-WindowTitle=Installazione Giudice v1.1
+WindowTitle=Installazione Giudice v1.1.2
 ProductName=Giudice, automazione voti per giudici esaminatori
 
 [Graphics]
@@ -14,16 +14,16 @@ WizardBitmap=
 WizardFontColor=0
 
 [FirstMessage]
-Giudice Copyright (C) 2016 2017 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
+Giudice Copyright (C) 2016 2018 Nicola Ferruzzi <nicola.ferruzzi@gmail.com>
 sviluppato per 
 RC Radiocomunicazioni - http://www.rcradiocom.it
 
 Distribuito su licenza GPLv3.
-http://github.com/nferruzzi/giudice-server
+http://github.com/nferruzzi/giudice-server88
 http://github.com/nferruzzi/giudice-client
 Dipendenze: Qt5 - LGPL e PyQt5 -  GPL 
 [LastMessage]
-Grazie per utilizzare Giudice v1.0
+Grazie per utilizzare Giudice v1.1.2
 
 [LicenseAgreement]
 This program is free software: you can redistribute it and/or modify
