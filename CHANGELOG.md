@@ -5,6 +5,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [1.1.3] - 2018-04-27
+### Changed
+- use cherrypy to server requests (previously was the single threaded dev server from bottle)
+- serial lock: 20 sec (was unlimited)
+- sqlite lock: 15 sec
+- ui refresh rate: 1.5 sec (was 1.0)
+
 ## [1.1.2] - 2018-04-24
 ### Added
 - option to display converted results from 0..1 to 0..1000
