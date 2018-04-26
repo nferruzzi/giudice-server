@@ -407,11 +407,23 @@ def getAllUsersWithAVote(connection):
     return res
 
 
+class TimeoutLock:
+    lock = threading.RLock()
+
+    def __enter__(self):
+        # print(threading.currentThread().getName())
+        return TimeoutLock.lock.acquire(timeout = 20.0)
+
+    def __exit__(self, a, b, c):
+        TimeoutLock.lock.release()
+
 class Gara(QObject):
 
     DONOT_ALLOW_DUPLICATE_JUDGES = True
     activeInstance = None
-    lock = threading.RLock()
+    #lock = FakeLock() 
+    #lock = threading.RLock()
+    lock = TimeoutLock()
 
     # signal (trial, user, judge, vote)
     vote_updated = pyqtSignal(int, int, int, float, name='voteUpdated')
@@ -470,7 +482,9 @@ class Gara(QObject):
 
     def getConnection(self):
         with self.lock:
-            return apsw.Connection(str(self.filename))
+            connection = apsw.Connection(str(self.filename))
+            connection.setbusytimeout(15000)
+            return connection
 
     def openDB(self):
         with self.lock:

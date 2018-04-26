@@ -1,7 +1,7 @@
 ; InstallSimple project
 
 [Setup]
-WindowTitle=Installazione Giudice v1.1.2
+WindowTitle=Installazione Giudice v1.1.3
 ProductName=Giudice, automazione voti per giudici esaminatori
 
 [Graphics]
@@ -23,7 +23,7 @@ http://github.com/nferruzzi/giudice-server88
 http://github.com/nferruzzi/giudice-client
 Dipendenze: Qt5 - LGPL e PyQt5 -  GPL 
 [LastMessage]
-Grazie per utilizzare Giudice v1.1.2
+Grazie per utilizzare Giudice v1.1.3
 
 [LicenseAgreement]
 This program is free software: you can redistribute it and/or modify

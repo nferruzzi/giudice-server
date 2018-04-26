@@ -12,7 +12,7 @@ import datetime
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from PyQt5.QtSerialPort import *
+from serialport import *
 
 
 class SerialManager(QObject):
@@ -24,11 +24,11 @@ class SerialManager(QObject):
         self.portname = portname
 
     def connectTo(self):
-        self.serial = QSerialPort(self)
+        self.serial = MySerialPort(self)
         self.serial.setPortName(self.portname)
-        self.serial.setBaudRate(QSerialPort.Baud2400)
+        self.serial.setBaudRate(MySerialPort.Baud2400)
         self.serial.setDataBits(8)
-        self.serial.setParity(QSerialPort.NoParity)
+        self.serial.setParity(MySerialPort.NoParity)
         self.serial.setStopBits(1)
         # does not work on windows for some reason with the adapter we got
         # self.serial.readyRead.connect(self.readData)
@@ -128,7 +128,7 @@ class SerialManager(QObject):
         self.parent().ui.displayPreview.setText("Il display non risponde, assicurarsi che sia acceso e collegato.")
         self.serial_disconnected.emit()
 
-    @pyqtSlot(QSerialPort.SerialPortError)
+    @pyqtSlot(MySerialPort.SerialPortError)
     def error(self, error):
         print(error.errorString())
         self.closeSerialPort()

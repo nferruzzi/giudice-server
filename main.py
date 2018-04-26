@@ -12,20 +12,22 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtPrintSupport import *
 from PyQt5.QtNetwork import *
-from PyQt5.QtSerialPort import *
 import http.server
 import threading
 import socketserver
 import ui
 import pathlib
 import json
+import cherrypy
+from cheroot.wsgi import Server as WSGIServer
 from gara import *
 from serial import *
 from bottle import Bottle, run, get, post, request
 from bottle import ServerAdapter, abort, install
 from urllib.error import HTTPError
+from serialport import *
 
-VERSION = '1.1.2'
+VERSION = '1.1.3'
 API_VERSION = '1.0'
 
 webapp = Bottle()
@@ -146,12 +148,14 @@ def vote(connection, gara):
 class Controller (object):
     def listen(self):
         print("listening")
-        self.server = MyWSGIRefServer(host="", port=8000)
-        run(webapp, server=self.server)
-        print("done listening")
+        self.server = WSGIServer(('0.0.0.0', 8000), webapp)
+        # run(webapp, server=self.server)
+        # run(webapp, server='bjoern', port=8000)
+        self.server.start()
 
     def shutdown(self):
         self.server.stop()
+        print("done listening")
 
 
 class DlgInfo (QDialog):
@@ -214,7 +218,7 @@ class DlgSerialConfig (QDialog, ui.Ui_DlgSerialConfig):
         super().__init__(parent)
         self.setupUi(self)
         self.serials = []
-        l = QSerialPortInfo.availablePorts()
+        l = MySerialPortInfo.availablePorts()
         found = None
         s = QSettings()
         self.delay.setText(str(s.value("display/delay", 4000)))
@@ -523,37 +527,40 @@ class GaraMainWindow (QMainWindow):
         ntrials = "{}/{}".format(trial+1, nt)
         self.ui.currentTrial.setText(ntrials)
 
-        done = gara.activeInstance.countDone(self.connection, trial)
-        nusers = "{}/{}".format(done, configuration['nUsers'])
-        self.ui.usersCounter.setText(nusers)
+        try:
+            done = gara.activeInstance.countDone(self.connection, trial)
+            nusers = "{}/{}".format(done, configuration['nUsers'])
+            self.ui.usersCounter.setText(nusers)
 
-        self.ui.data.setText(configuration['date'].strftime('%d-%m-%Y'))
+            self.ui.data.setText(configuration['date'].strftime('%d-%m-%Y'))
 
-        stato = ""
-        state_conn = _translate("MainWindow", "Connesso")
-        state_nconn = _translate("MainWindow", "Non connesso")
+            stato = ""
+            state_conn = _translate("MainWindow", "Connesso")
+            state_nconn = _translate("MainWindow", "Non connesso")
 
-        for i in range(1, configuration['nJudges']+1):
-            val = gara.usersUUID.get(i)
-            if val is not None:
-                state = state_conn
-                lt = gara.usersTIME.get(val)
-                diff = time.time() - lt
-                if diff <= 3.0:
-                    color = "green"
-                elif diff <= 5.0:
-                    color = "yellow"
-                elif diff <= 10.0:
-                    color = "orange"
+            for i in range(1, configuration['nJudges']+1):
+                val = gara.usersUUID.get(i)
+                if val is not None:
+                    state = state_conn
+                    lt = gara.usersTIME.get(val)
+                    diff = time.time() - lt
+                    if diff <= 3.0:
+                        color = "green"
+                    elif diff <= 5.0:
+                        color = "yellow"
+                    elif diff <= 10.0:
+                        color = "orange"
+                    else:
+                        color = "red"
+                        state = state_nconn
+                    sg = '<font color=\"{}\">{}</font>'.format(color, state)
                 else:
-                    color = "red"
-                    state = state_nconn
-                sg = '<font color=\"{}\">{}</font>'.format(color, state)
-            else:
-                sg = '<font color=\"red\">{}</font>'.format(state_nconn)
-            stato += _translate("MainWindow", "Giudice {}: {}").format(i, sg)
-            stato += " | "
-        self.statusLabel.setText(stato)
+                    sg = '<font color=\"red\">{}</font>'.format(state_nconn)
+                stato += _translate("MainWindow", "Giudice {}: {}").format(i, sg)
+                stato += " | "
+            self.statusLabel.setText(stato)
+        except:
+            print("timeout")
 
     def createTableAndModel(self, rows, cols, labels):
         tv = QTableView(self)
@@ -1155,7 +1162,7 @@ class GaraMainWindow (QMainWindow):
         self.serialManager = None
         timer = QTimer(self)
         timer.timeout.connect(self.updateUI)
-        timer.start(1000)
+        timer.start(1500)
         if Gara.activeInstance is None:
             self.showNuovaGara()
 
