@@ -12,7 +12,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtPrintSupport import *
 from PyQt5.QtNetwork import *
-from PyQt5.QtSerialPort import *
 import http.server
 import threading
 import socketserver
@@ -24,6 +23,7 @@ from serial import *
 from bottle import Bottle, run, get, post, request
 from bottle import ServerAdapter, abort, install
 from urllib.error import HTTPError
+from serialport import *
 
 VERSION = '1.1.2'
 API_VERSION = '1.0'
@@ -214,7 +214,7 @@ class DlgSerialConfig (QDialog, ui.Ui_DlgSerialConfig):
         super().__init__(parent)
         self.setupUi(self)
         self.serials = []
-        l = QSerialPortInfo.availablePorts()
+        l = MySerialPortInfo.availablePorts()
         found = None
         s = QSettings()
         self.delay.setText(str(s.value("display/delay", 4000)))
